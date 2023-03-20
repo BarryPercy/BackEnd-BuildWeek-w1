@@ -1,74 +1,135 @@
 import express from "express";
 import createHttpError from "http-errors";
-import q2m from "query-to-mongo";
 import CommentsModel from "./model.js";
+import PostModel from "../posts/model.js";
 
 const commentsRouter = express.Router();
 
-commentsRouter.get("/", async (req, res, next) => {
+commentsRouter.get("/:postId/comments", async (req, res, next) => {
   try {
-    const mongoQuery = q2m(req.query);
-    const { comments, total } = await CommentsModel.findcommentsWithPosts(
-      mongoQuery
-    );
-    res.send({
-      links: mongoQuery.links(process.env.BE_URL, total),
-      total,
-      numberOfPages: Math.ceil(total / mongoQuery.options.limit),
-      comments,
+    const comment = await PostModel.findById(req.params.postId).populate({
+      path: "comments",
+      select: "comment user",
     });
-  } catch (error) {
-    next(error);
-  }
-});
-commentsRouter.get("/:id", async (req, res, next) => {
-  try {
-    const comment = await CommentsModel.findById(req.params.id);
     if (comment) {
-      res.send(comment);
+      res.send(comment.comments);
     } else {
-      next(createHttpError(404, `Comment with id ${req.params.id} not found!`));
+      next(
+        createHttpError(404, `Post with id ${req.params.postId} not found!`)
+      );
     }
   } catch (error) {
     next(error);
   }
 });
-commentsRouter.post("/", async (req, res, next) => {
+commentsRouter.get("/:postId/comments/:commentId", async (req, res, next) => {
   try {
-    const newcomment = new commentsModel(req.body);
-    const { _id } = await newcomment.save();
-    res.status(201).send({ _id });
+    const comment = await PostModel.findById(req.params.postId).populate({
+      path: "comments",
+      select: "comment user",
+    });
+    if (!comment) {
+      next(
+        createHttpError(404, `Post with id ${req.params.postId} not found!`)
+      );
+    }
+    const foundComment = comment.comments.filter(
+      (e) => e._id.toString() === req.params.commentId
+    );
+    if (!foundComment) {
+      next(
+        createHttpError(
+          404,
+          `Comment with id ${req.params.commentId} not found!`
+        )
+      );
+    }
+    res.send(foundComment);
   } catch (error) {
     next(error);
   }
 });
-commentsRouter.put("/:id", async (req, res, next) => {
+commentsRouter.post("/:postId/comments", async (req, res, next) => {
   try {
+    const foundPost = await PostModel.findById(req.params.postId);
+    if (foundPost) {
+      const newComment = new CommentsModel(req.body);
+      const { _id } = await newComment.save();
+      const updatedPost = await PostModel.findByIdAndUpdate(
+        req.params.postId,
+        { $push: { comments: _id } },
+        { new: true, runValidators: true }
+      );
+      res.status(201).send({ updatedPost, _id });
+    } else {
+      next(
+        createHttpError(404, `Post with id ${req.params.postId} not found!`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+commentsRouter.put("/:postId/comments/:commentId", async (req, res, next) => {
+  try {
+    const foundPost = await PostModel.findById(req.params.postId);
+    if (!foundPost) {
+      next(
+        createHttpError(404, `Post with id ${req.params.postId} not found!`)
+      );
+    }
+
     const updatedComment = await CommentsModel.findByIdAndUpdate(
-      req.params.id,
+      req.params.commentId,
       req.body,
       { new: true, runValidators: true }
     );
-    if (updatedComment) {
-      res.send(updatedComment);
-    } else {
-      next(createHttpError(404, `Comment with id ${req.params.id} not found!`));
+    if (!updatedComment) {
+      next(
+        createHttpError(
+          404,
+          `Comment with id ${req.params.commentId} not found!`
+        )
+      );
     }
+
+    res.send(updatedComment);
   } catch (error) {
     next(error);
   }
 });
-commentsRouter.delete("/:id", async (req, res, next) => {
-  try {
-    const deletedComment = await CommentsModel.findByIdAndDelete(req.params.id);
-    if (deletedComment) {
+commentsRouter.delete(
+  "/:postId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const foundPost = await PostModel.findByIdAndUpdate(
+        req.params.postId,
+        {
+          $pull: { comments: req.params.commentId },
+        },
+        { new: true, runValidators: true }
+      );
+      if (!foundPost) {
+        next(
+          createHttpError(404, `Post with id ${req.params.postId} not found!`)
+        );
+      }
+      const deletedComment = await CommentsModel.findByIdAndDelete(
+        req.params.commentId
+      );
+      if (!deletedComment) {
+        next(
+          createHttpError(
+            404,
+            `Comment with id ${req.params.commentId} not found!`
+          )
+        );
+      }
       res.status(204).send();
-    } else {
-      next(createError(404, `Comment with id ${req.params.id} not found!`));
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 export default commentsRouter;

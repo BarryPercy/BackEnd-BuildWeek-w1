@@ -8,6 +8,7 @@ const postsSchema = new Schema(
     img: { type: String },
     user: { type: String },
     // user: [{ type: Schema.Types.ObjectId, ref: "Users", required: true }],
+    comments: [{ type: Schema.Types.ObjectId, ref: "Comments" }],
   },
   { timestamps: true }
 );
@@ -22,4 +23,4 @@ postsSchema.static("findpostsWithUsers", async function (query) {
   return { posts, total };
 });
 
-export default model("Post", postsSchema);
+export default model("Posts", postsSchema);

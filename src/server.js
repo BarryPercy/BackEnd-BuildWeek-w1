@@ -3,6 +3,7 @@ import listEndpoints from "express-list-endpoints";
 import cors from "cors";
 import mongoose from "mongoose";
 import postsRouter from "./api/posts/index.js";
+import commentsRouter from "./api/comments/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
@@ -14,7 +15,7 @@ server.use(Express.json());
 server.use("/posts", postsRouter);
 // server.use("/users/", experienceRouter);
 // server.use("/users/", educationRouter);
-// server.use("/comments", commentsRouter);
+server.use("/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
 // server.use("/users", CSVRouter);
