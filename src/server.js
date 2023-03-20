@@ -4,6 +4,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import postsRouter from "./api/comments/model.js";
 import usersRouter from "./api/users/index.js";
+import commentsRouter from "./api/comments/index.js";
 import {
   badReqHandler,
   generalErrorHandler,
@@ -19,7 +20,7 @@ server.use(Express.json());
 
 server.use("/users", usersRouter);
 server.use("/posts", postsRouter);
-server.use("/users/", experienceRouter);
+server.use("/users", experienceRouter);
 // server.use("/users/", educationRouter);
 server.use("/posts", commentsRouter);
 // server.use("/users", imageRouter);
