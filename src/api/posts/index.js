@@ -10,7 +10,7 @@ postsRouter.get("/", async (req, res, next) => {
     const mongoQuery = q2m(req.query);
     const { posts, total } = await PostsModel.findpostsWithUsers(mongoQuery);
     res.send({
-      links: mongoQuery.links(process.env.BE_URL, total),
+      links: mongoQuery.links(process.env.BE_URL + "/posts", total),
       total,
       numberOfPages: Math.ceil(total / mongoQuery.options.limit),
       posts,

@@ -14,8 +14,23 @@ import experienceRouter from "./api/experiences/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
+const whiteList = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
+const corsOptions = {
+  origin: (origin, corsNext) => {
+    if (!origin || whiteList.indexOf(origin) !== -1) {
+      corsNext(null, true);
+    } else {
+      corsNext(
+        corsNext(
+          createHttpError(400, `Origin ${origin} is not in the whitelist!`)
+        )
+      );
+    }
+  },
+};
+server.use(cors(corsOptions));
 
-server.use(cors());
+// server.use(cors());
 server.use(Express.json());
 
 server.use("/users", usersRouter);
