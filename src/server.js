@@ -9,6 +9,7 @@ import {
   generalErrorHandler,
   notFoundHandler,
 } from "./errorHandlers.js";
+import experienceRouter from "./api/experiences/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
@@ -18,7 +19,7 @@ server.use(Express.json());
 
 server.use("/users", usersRouter);
 server.use("/posts", postsRouter);
-// server.use("/users/", experienceRouter);
+server.use("/users/", experienceRouter);
 // server.use("/users/", educationRouter);
 // server.use("/comments", commentsRouter);
 // server.use("/users", imageRouter);

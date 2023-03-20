@@ -11,7 +11,21 @@ const usersSchema = new Schema(
     title: { type: String, required: true },
     area: { type: String, required: true },
     image: { type: String, required: true },
+    experiences: [
+      {
+        role: { type: String },
+        company: { type: String },
+        startDate: { type: Date },
+        endDate: { type: Date },
+        description: { type: String },
+        area: { type: String },
+        image: { type: String },
+        createdAt: { type: Date },
+        updatedAt: { type: Date },
+      },
+    ],
   },
+  { strict: "throw" },
   { timestamps: true }
 );
 

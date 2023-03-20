@@ -6,7 +6,12 @@ const usersRouter = Express.Router();
 
 usersRouter.post("/", async (req, res, next) => {
   try {
-    const newUser = new UsersModel(req.body);
+    const userToAdd = {
+      ...req.body,
+      image: "https://picsum.photos/200/300",
+      experiences: [],
+    };
+    const newUser = new UsersModel(userToAdd);
     const { _id } = await newUser.save();
     res.status(201).send({ _id });
   } catch (error) {
