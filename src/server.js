@@ -11,6 +11,7 @@ import {
   notFoundHandler,
 } from "./errorHandlers.js";
 import experienceRouter from "./api/experiences/index.js";
+import createHttpError from "http-errors";
 
 const server = Express();
 const port = process.env.PORT || 3001;
