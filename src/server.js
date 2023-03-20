@@ -2,7 +2,7 @@ import Express from "express";
 import listEndpoints from "express-list-endpoints";
 import cors from "cors";
 import mongoose from "mongoose";
-import postsRouter from "./api/comments/model.js";
+import postsRouter from "./api/posts/index.js";
 import usersRouter from "./api/users/index.js";
 import commentsRouter from "./api/comments/index.js";
 import {
