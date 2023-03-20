@@ -1,13 +1,23 @@
-import express from "express";
-import createHttpError from "http-errors";
-import q2m from "query-to-mongo";
+import mongoose from "mongoose";
 
-const postsRouter = express.Router();
+const { Schema, model } = mongoose;
 
-postsRouter.get("/", (req, res, next) => {});
-postsRouter.get("/:id", (req, res, next) => {});
-postsRouter.post("/", (req, res, next) => {});
-postsRouter.put("/id", (req, res, next) => {});
-postsRouter.delete("/:id", (req, res, next) => {});
+const commentsSchema = new Schema(
+  {
+    comment: { type: String, required: true },
+    blog: [{ type: Schema.Types.ObjectId, ref: "Posts", required: true }],
+  },
+  { timestamps: true }
+);
 
-export default postsRouter;
+commentsSchema.static("findcommentsWithPosts", async function (query) {
+  const comments = await this.find(query.criteria, query.options.fields)
+    .limit(query.options.limit)
+    .skip(query.options.skip)
+    .sort(query.options.sort)
+    .populate({ path: "Blogs", select: "post img" });
+  const total = await this.countDocuments(query.criteria);
+  return { comments, total };
+});
+
+export default model("Comment", commentsSchema);

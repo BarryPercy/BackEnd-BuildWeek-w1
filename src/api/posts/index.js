@@ -40,7 +40,7 @@ postsRouter.post("/", async (req, res, next) => {
     next(error);
   }
 });
-postsRouter.put("/id", async (req, res, next) => {
+postsRouter.put("/:id", async (req, res, next) => {
   try {
     const updatedPost = await PostsModel.findByIdAndUpdate(
       req.params.id,
@@ -50,12 +50,23 @@ postsRouter.put("/id", async (req, res, next) => {
     if (updatedPost) {
       res.send(updatedPost);
     } else {
+      next(createHttpError(404, `post with id ${req.params.id} not found!`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+postsRouter.delete("/:id", async (req, res, next) => {
+  try {
+    const deletedPost = await PostsModel.findByIdAndDelete(req.params.id);
+    if (deletedPost) {
+      res.status(204).send();
+    } else {
       next(createError(404, `post with id ${req.params.id} not found!`));
     }
   } catch (error) {
     next(error);
   }
 });
-postsRouter.delete("/:id", async (req, res, next) => {});
 
 export default postsRouter;
