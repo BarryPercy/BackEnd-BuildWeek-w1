@@ -10,7 +10,14 @@ const port = process.env.PORT || 3001;
 server.use(cors());
 server.use(Express.json());
 
+// server.use("/users", usersRouter);
 server.use("/posts", postsRouter);
+// server.use("/users/", experienceRouter);
+// server.use("/users/", educationRouter);
+// server.use("/comments", commentsRouter);
+// server.use("/users", imageRouter);
+// server.use("/profile", CVRouter);
+// server.use("/users", CSVRouter);
 
 mongoose.connect(process.env.MONGO_URL);
 mongoose.connection.on("connected", () => {
