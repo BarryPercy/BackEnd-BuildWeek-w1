@@ -2,6 +2,16 @@ import Express from "express";
 import UsersModel from "../users/model.js";
 import ExperiencesModel from "./model.js";
 import createHttpError from "http-errors";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
+
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: { folder: "experiences/image" },
+  }),
+}).single("image");
 
 const experienceRouter = Express.Router();
 
@@ -148,6 +158,42 @@ experienceRouter.delete(
             `User with the id ${req.params.userId} not found!`
           )
         );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ************************ PROFILE PICTURE ************************
+
+experienceRouter.post(
+  "/:userId/experiences/:expId/image",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const user = await UsersModel.findById(req.params.userId);
+      if (user) {
+        const index = user.experiences.findIndex(
+          (e) => e._id.toString() === req.params.expId
+        );
+
+        if (index === -1)
+          return next(
+            createHttpError(
+              404,
+              `Experience witht the id: ${req.params.expId} not found.`
+            )
+          );
+        user.experiences[index] = {
+          ...user.experiences[index].toObject(),
+          image: req.file.path,
+          updatedAt: new Date(),
+        };
+        await user.save();
+        res.send(user);
+      } else {
+        next(createError(404, `User with id ${req.params.userId} not found!`));
       }
     } catch (error) {
       next(error);
