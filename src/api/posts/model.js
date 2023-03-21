@@ -4,10 +4,9 @@ const { Schema, model } = mongoose;
 
 const postsSchema = new Schema(
   {
-    post: { type: String, required: true },
-    img: { type: String },
-    user: { type: String },
-    // user: [{ type: Schema.Types.ObjectId, ref: "Users", required: true }],
+    text: { type: String, required: true },
+    image: { type: String },
+    user: [{ type: Schema.Types.ObjectId, ref: "User", required: true }],
     comments: [{ type: Schema.Types.ObjectId, ref: "Comments" }],
   },
   { timestamps: true }
@@ -17,8 +16,8 @@ postsSchema.static("findpostsWithUsers", async function (query) {
   const posts = await this.find(query.criteria, query.options.fields)
     .limit(query.options.limit)
     .skip(query.options.skip)
-    .sort(query.options.sort);
-  // .populate({ path: "Users", select: "firstName lastName" });
+    .sort(query.options.sort)
+    .populate({ path: "User", select: "name surname image" });
   const total = await this.countDocuments(query.criteria);
   return { posts, total };
 });

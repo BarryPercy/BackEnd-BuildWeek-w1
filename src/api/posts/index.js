@@ -19,6 +19,7 @@ postsRouter.get("/", async (req, res, next) => {
     next(error);
   }
 });
+
 postsRouter.get("/:id", async (req, res, next) => {
   try {
     const post = await PostsModel.findById(req.params.id);
@@ -31,15 +32,22 @@ postsRouter.get("/:id", async (req, res, next) => {
     next(error);
   }
 });
+
 postsRouter.post("/", async (req, res, next) => {
   try {
-    const newPost = new PostsModel(req.body);
+    const postToAdd = {
+      ...req.body,
+      image:
+        "https://upload.wikimedia.org/wikipedia/en/9/9a/Trollface_non-free.png",
+    };
+    const newPost = new PostsModel(postToAdd);
     const { _id } = await newPost.save();
     res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
 });
+
 postsRouter.put("/:id", async (req, res, next) => {
   try {
     const updatedPost = await PostsModel.findByIdAndUpdate(
@@ -56,6 +64,7 @@ postsRouter.put("/:id", async (req, res, next) => {
     next(error);
   }
 });
+
 postsRouter.delete("/:id", async (req, res, next) => {
   try {
     const deletedPost = await PostsModel.findByIdAndDelete(req.params.id);
