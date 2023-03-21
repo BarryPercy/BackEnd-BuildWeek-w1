@@ -39,6 +39,11 @@ const usersSchema = new Schema(
         updatedAt: { type: Date },
       },
     ],
+    social: {
+      friends: [{ type: String }],
+      sent: [{ type: String }],
+      pending: [{ type: String }],
+    },
   },
   { strict: "throw" },
   { timestamps: true }

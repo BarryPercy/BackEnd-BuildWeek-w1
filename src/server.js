@@ -38,7 +38,7 @@ server.use(Express.json());
 server.use("/api/users", usersRouter);
 server.use("/api/posts", postsRouter);
 server.use("/api/users", experienceRouter);
-server.use("/api/users/", educationRouter);
+server.use("/api/users", educationRouter);
 server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
