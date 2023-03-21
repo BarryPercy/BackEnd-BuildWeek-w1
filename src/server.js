@@ -34,11 +34,11 @@ server.use(cors(corsOptions));
 // server.use(cors());
 server.use(Express.json());
 
-server.use("/users", usersRouter);
-server.use("/posts", postsRouter);
-server.use("/users", experienceRouter);
+server.use("/api/users", usersRouter);
+server.use("/api/posts", postsRouter);
+server.use("/api/users", experienceRouter);
 // server.use("/users/", educationRouter);
-server.use("/posts", commentsRouter);
+server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
 // server.use("/users", CSVRouter);
