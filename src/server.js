@@ -12,6 +12,7 @@ import {
 } from "./errorHandlers.js";
 import experienceRouter from "./api/experiences/index.js";
 import createHttpError from "http-errors";
+import educationRouter from "./api/education/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
@@ -34,11 +35,11 @@ server.use(cors(corsOptions));
 // server.use(cors());
 server.use(Express.json());
 
-server.use("/users", usersRouter);
-server.use("/posts", postsRouter);
-server.use("/users", experienceRouter);
-// server.use("/users/", educationRouter);
-server.use("/posts", commentsRouter);
+server.use("/api/users", usersRouter);
+server.use("/api/posts", postsRouter);
+server.use("/api/users", experienceRouter);
+server.use("/api/users/", educationRouter);
+server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
 // server.use("/users", CSVRouter);
