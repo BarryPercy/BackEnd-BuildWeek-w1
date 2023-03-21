@@ -165,7 +165,7 @@ experienceRouter.delete(
   }
 );
 
-// ************************ PROFILE PICTURE ************************
+// ************************ IMAGE ************************
 
 experienceRouter.post(
   "/:userId/experiences/:expId/image",

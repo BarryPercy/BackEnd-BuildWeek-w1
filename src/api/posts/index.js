@@ -3,8 +3,18 @@ import createHttpError from "http-errors";
 import q2m from "query-to-mongo";
 import PostsModel from "./model.js";
 import UsersModel from "../users/model.js";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
 const postsRouter = express.Router();
+
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: { folder: "posts/image" },
+  }),
+}).single("image");
 
 postsRouter.get("/", async (req, res, next) => {
   try {
@@ -125,5 +135,28 @@ postsRouter.post("/:postId/likes/:userId", async (req, res, next) => {
     next(error);
   }
 });
+
+// ************************ IMAGE ************************
+
+postsRouter.post(
+  "/:postId/image",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const updatedPost = await PostsModel.findByIdAndUpdate(
+        req.params.postId,
+        { image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedPost) {
+        res.send(updatedPost);
+      } else {
+        next(createError(404, `Post with id ${req.params.postId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default postsRouter;

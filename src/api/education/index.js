@@ -164,7 +164,7 @@ educationRouter.delete(
   }
 );
 
-// ************************ PROFILE PICTURE ************************
+// ************************ IMAGE ************************
 
 educationRouter.post(
   "/:userId/educations/:educationId/image",
