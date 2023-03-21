@@ -32,7 +32,6 @@ const corsOptions = {
 };
 server.use(cors(corsOptions));
 
-// server.use(cors());
 server.use(Express.json());
 
 server.use("/api/users", usersRouter);
