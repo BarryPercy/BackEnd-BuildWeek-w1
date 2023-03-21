@@ -142,4 +142,72 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
   }
 });
 
+// ************************ FRIENDS ************************
+
+usersRouter.post(
+  "/:senderId/friendrequest/:reciverId",
+  async (req, res, next) => {
+    try {
+      const sender = await UsersModel.findById(req.params.senderId);
+      if (!sender)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.senderId} not found.`
+          )
+        );
+      const reciver = await UsersModel.findById(req.params.reciverId);
+      if (!reciver)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.reciverId} not found.`
+          )
+        );
+
+      const isSent = await UsersModel.findOne({
+        "social.sent": req.params.reciverId,
+      });
+
+      if (isSent) {
+        const letsUnSend = await UsersModel.findOneAndUpdate(
+          req.params.senderId,
+          { $pull: { "social.sent": req.params.reciverId } },
+          { new: true, runValidators: true }
+        );
+        const letsUnPending = await UsersModel.findByIdAndUpdate(
+          req.params.reciverId,
+          { $pull: { "social.pending": req.params.senderId } },
+          { new: true, runValidators: true }
+        );
+        res.send({ letsUnSend, letsUnPending });
+      } else {
+        const letsSend = await UsersModel.findOneAndUpdate(
+          req.params.senderId,
+          { $push: { "social.sent": req.params.reciverId } },
+          { new: true, runValidators: true }
+        );
+        const letsPending = await UsersModel.findByIdAndUpdate(
+          req.params.reciverId,
+          { $push: { "social.pending": req.params.senderId } },
+          { new: true, runValidators: true }
+        );
+        res.send({ letsSend, letsPending });
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+usersRouter.post(
+  "/:accepterId/acceptfriend/:acceptedId",
+  async (req, res, next) => {
+    try {
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 export default usersRouter;
