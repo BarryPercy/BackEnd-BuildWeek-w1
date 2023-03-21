@@ -2,6 +2,7 @@ import express from "express";
 import createHttpError from "http-errors";
 import q2m from "query-to-mongo";
 import PostsModel from "./model.js";
+import UsersModel from "../users/model.js";
 
 const postsRouter = express.Router();
 
@@ -81,8 +82,45 @@ postsRouter.delete("/:id", async (req, res, next) => {
   }
 });
 
-postsRouter.post("/:id", async (req, res, next) => {
+postsRouter.post("/:postId/likes/:userId", async (req, res, next) => {
   try {
+    const postToLike = await PostsModel.findById(req.params.postId);
+    if (!postToLike)
+      return next(
+        createHttpError(
+          404,
+          `Post with the id: ${req.params.postId} not found.`
+        )
+      );
+
+    const userAboutLike = await UsersModel.findById(req.params.userId);
+    if (!userAboutLike)
+      return next(
+        createHttpError(
+          404,
+          `User with the id: ${req.params.userId} not found.`
+        )
+      );
+
+    const isLikedYet = await PostsModel.findOne({
+      likes: req.params.userId,
+    });
+
+    if (isLikedYet) {
+      const letsDislike = await PostsModel.findByIdAndUpdate(
+        req.params.postId,
+        { $pull: { likes: req.params.userId } },
+        { new: true, runValidators: true }
+      );
+      res.send(letsDislike);
+    } else {
+      const letsLike = await PostsModel.findByIdAndUpdate(
+        req.params.postId,
+        { $push: { likes: req.params.userId } },
+        { new: true, runValidators: true }
+      );
+      res.send(letsLike);
+    }
   } catch (error) {
     next(error);
   }
