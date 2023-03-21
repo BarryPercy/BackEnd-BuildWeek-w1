@@ -1,8 +1,18 @@
 import Express from "express";
 import createHttpError from "http-errors";
+import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import UsersModel from "./model.js";
+import { v2 as cloudinary } from "cloudinary";
 
 const usersRouter = Express.Router();
+
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: { folder: "users/image" },
+  }),
+}).single("image");
 
 usersRouter.post("/", async (req, res, next) => {
   try {
@@ -80,5 +90,28 @@ usersRouter.delete("/:userId", async (req, res, next) => {
     next(error);
   }
 });
+
+// ************************ PROFILE PICTURE ************************
+
+usersRouter.post(
+  "/:userId/image",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.params.userId,
+        { image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(createError(404, `User with id ${req.params.userId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default usersRouter;
