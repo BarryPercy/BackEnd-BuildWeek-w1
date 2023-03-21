@@ -29,7 +29,7 @@ experienceRouter.post("/:userId/experiences", async (req, res, next) => {
       { new: true, runValidator: true }
     );
     if (updatedUser) {
-      res.send(updatedUser);
+      res.send(experienceToAdd);
     } else {
       next(
         createHttpError(

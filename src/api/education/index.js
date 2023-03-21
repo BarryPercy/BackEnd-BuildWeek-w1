@@ -29,7 +29,7 @@ educationRouter.post("/:userId/educations", async (req, res, next) => {
       { new: true, runValidator: true }
     );
     if (updatedUser) {
-      res.send(updatedUser);
+      res.send(educationToAdd);
     } else {
       next(
         createHttpError(
