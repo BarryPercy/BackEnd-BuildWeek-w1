@@ -12,6 +12,7 @@ import {
 } from "./errorHandlers.js";
 import experienceRouter from "./api/experiences/index.js";
 import createHttpError from "http-errors";
+import educationRouter from "./api/education/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
@@ -37,7 +38,7 @@ server.use(Express.json());
 server.use("/api/users", usersRouter);
 server.use("/api/posts", postsRouter);
 server.use("/api/users", experienceRouter);
-// server.use("/users/", educationRouter);
+server.use("/api/users/", educationRouter);
 server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);

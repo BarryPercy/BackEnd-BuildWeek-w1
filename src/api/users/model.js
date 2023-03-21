@@ -24,6 +24,21 @@ const usersSchema = new Schema(
         updatedAt: { type: Date },
       },
     ],
+    educations: [
+      {
+        school: { type: String },
+        degree: { type: String },
+        field: { type: String },
+        startDate: { type: Date },
+        endDate: { type: Date },
+        grade: { type: String },
+        activity: { type: String },
+        image: { type: String },
+        description: { type: String },
+        createdAt: { type: Date },
+        updatedAt: { type: Date },
+      },
+    ],
   },
   { strict: "throw" },
   { timestamps: true }

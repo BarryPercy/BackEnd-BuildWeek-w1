@@ -112,14 +112,14 @@ postsRouter.post("/:postId/likes/:userId", async (req, res, next) => {
         { $pull: { likes: req.params.userId } },
         { new: true, runValidators: true }
       );
-      res.send(letsDislike);
+      res.send({ LikeLength: letsDislike.likes.length, DisLiked: letsDislike });
     } else {
       const letsLike = await PostsModel.findByIdAndUpdate(
         req.params.postId,
         { $push: { likes: req.params.userId } },
         { new: true, runValidators: true }
       );
-      res.send(letsLike);
+      res.send({ LikeLength: letsLike.likes.length, Liked: letsLike });
     }
   } catch (error) {
     next(error);

@@ -1,6 +1,6 @@
 import Express from "express";
 import UsersModel from "../users/model.js";
-import ExperiencesModel from "./model.js";
+import EducationsModel from "./model.js";
 import createHttpError from "http-errors";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
@@ -9,15 +9,15 @@ import { v2 as cloudinary } from "cloudinary";
 const cloudinaryUploader = multer({
   storage: new CloudinaryStorage({
     cloudinary,
-    params: { folder: "experiences/image" },
+    params: { folder: "education/image" },
   }),
 }).single("image");
 
-const experienceRouter = Express.Router();
+const educationRouter = Express.Router();
 
-experienceRouter.post("/:userId/experiences", async (req, res, next) => {
+educationRouter.post("/:userId/educations", async (req, res, next) => {
   try {
-    const experienceToAdd = new ExperiencesModel({
+    const educationToAdd = new EducationsModel({
       ...req.body,
       image: "https://picsum.photos/200/300",
       createdAt: new Date(),
@@ -25,7 +25,7 @@ experienceRouter.post("/:userId/experiences", async (req, res, next) => {
     });
     const updatedUser = await UsersModel.findByIdAndUpdate(
       req.params.userId,
-      { $push: { experiences: experienceToAdd } },
+      { $push: { educations: educationToAdd } },
       { new: true, runValidator: true }
     );
     if (updatedUser) {
@@ -43,11 +43,11 @@ experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   }
 });
 
-experienceRouter.get("/:userId/experiences", async (req, res, next) => {
+educationRouter.get("/:userId/educations", async (req, res, next) => {
   try {
     const user = await UsersModel.findById(req.params.userId);
     if (user) {
-      res.send(user.experiences);
+      res.send(user.educations);
     } else {
       next(
         createHttpError(
@@ -61,22 +61,22 @@ experienceRouter.get("/:userId/experiences", async (req, res, next) => {
   }
 });
 
-experienceRouter.get(
-  "/:userId/experiences/:experienceId",
+educationRouter.get(
+  "/:userId/educations/:educationId",
   async (req, res, next) => {
     try {
       const user = await UsersModel.findById(req.params.userId);
       if (user) {
-        const experience = user.experiences.find(
-          (e) => e._id.toString() === req.params.experienceId
+        const education = user.educations.find(
+          (e) => e._id.toString() === req.params.educationId
         );
-        if (experience) {
-          res.send(experience);
+        if (education) {
+          res.send(education);
         } else {
           next(
             createHttpError(
               404,
-              `Experience witht the id: ${req.params.experienceId} not found.`
+              `Education witht the id: ${req.params.educationId} not found.`
             )
           );
         }
@@ -94,19 +94,18 @@ experienceRouter.get(
   }
 );
 
-experienceRouter.put(
-  "/:userId/experiences/:experienceId",
+educationRouter.put(
+  "/:userId/educations/:educationId",
   async (req, res, next) => {
     try {
       const user = await UsersModel.findById(req.params.userId);
       if (user) {
-        const index = user.experiences.findIndex(
-          (e) => e._id.toString() === req.params.experienceId
+        const index = user.educations.findIndex(
+          (e) => e._id.toString() === req.params.educationId
         );
         if (index !== -1) {
-          console.log(`user.experiences[index]: ${user.experiences[index]}`);
-          user.experiences[index] = {
-            ...user.experiences[index].toObject(),
+          user.educations[index] = {
+            ...user.educations[index].toObject(),
             ...req.body,
             updatedAt: new Date(),
           };
@@ -117,7 +116,7 @@ experienceRouter.put(
           next(
             createHttpError(
               404,
-              `Experience with the id ${req.params.experienceId} not found!`
+              `Education with the id ${req.params.educationId} not found!`
             )
           );
         }
@@ -140,13 +139,13 @@ experienceRouter.put(
   }
 );
 
-experienceRouter.delete(
-  "/:userId/experiences/:experienceId",
+educationRouter.delete(
+  "/:userId/educations/:educationId",
   async (req, res, next) => {
     try {
       const updatedUser = await UsersModel.findByIdAndUpdate(
         req.params.userId,
-        { $pull: { experiences: { _id: req.params.experienceId } } },
+        { $pull: { educations: { _id: req.params.educationId } } },
         { new: true, runValidators: true }
       );
       if (updatedUser) {
@@ -167,26 +166,26 @@ experienceRouter.delete(
 
 // ************************ PROFILE PICTURE ************************
 
-experienceRouter.post(
-  "/:userId/experiences/:expId/image",
+educationRouter.post(
+  "/:userId/educations/:educationId/image",
   cloudinaryUploader,
   async (req, res, next) => {
     try {
       const user = await UsersModel.findById(req.params.userId);
       if (user) {
-        const index = user.experiences.findIndex(
-          (e) => e._id.toString() === req.params.expId
+        const index = user.educations.findIndex(
+          (e) => e._id.toString() === req.params.educationId
         );
 
         if (index === -1)
           return next(
             createHttpError(
               404,
-              `Experience witht the id: ${req.params.expId} not found.`
+              `Education witht the id: ${req.params.educationId} not found.`
             )
           );
-        user.experiences[index] = {
-          ...user.experiences[index].toObject(),
+        user.educations[index] = {
+          ...user.educations[index].toObject(),
           image: req.file.path,
           updatedAt: new Date(),
         };
@@ -201,4 +200,4 @@ experienceRouter.post(
   }
 );
 
-export default experienceRouter;
+export default educationRouter;
