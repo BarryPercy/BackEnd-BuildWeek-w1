@@ -22,11 +22,14 @@ postsRouter.get("/", async (req, res, next) => {
 
 postsRouter.get("/:id", async (req, res, next) => {
   try {
-    const post = await PostsModel.findById(req.params.id);
+    const post = await PostsModel.findById(req.params.id).populate({
+      path: "comments user",
+      select: "comment user name surname",
+    });
     if (post) {
       res.send(post);
     } else {
-      next(createHttpError(404, `post with id ${req.params.id} not found!`));
+      next(createHttpError(404, `Post with id ${req.params.id} not found!`));
     }
   } catch (error) {
     next(error);
@@ -58,7 +61,7 @@ postsRouter.put("/:id", async (req, res, next) => {
     if (updatedPost) {
       res.send(updatedPost);
     } else {
-      next(createHttpError(404, `post with id ${req.params.id} not found!`));
+      next(createHttpError(404, `Post with id ${req.params.id} not found!`));
     }
   } catch (error) {
     next(error);
@@ -71,8 +74,15 @@ postsRouter.delete("/:id", async (req, res, next) => {
     if (deletedPost) {
       res.status(204).send();
     } else {
-      next(createError(404, `post with id ${req.params.id} not found!`));
+      next(createError(404, `Post with id ${req.params.id} not found!`));
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+postsRouter.post("/:id", async (req, res, next) => {
+  try {
   } catch (error) {
     next(error);
   }

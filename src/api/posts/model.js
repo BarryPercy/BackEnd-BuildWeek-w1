@@ -17,7 +17,10 @@ postsSchema.static("findpostsWithUsers", async function (query) {
     .limit(query.options.limit)
     .skip(query.options.skip)
     .sort(query.options.sort)
-    .populate({ path: "user", select: "name surname image" });
+    .populate({
+      path: "user comments",
+      select: "name surname comment",
+    });
   const total = await this.countDocuments(query.criteria);
   return { posts, total };
 });
