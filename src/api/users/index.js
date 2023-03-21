@@ -4,6 +4,7 @@ import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import UsersModel from "./model.js";
 import { v2 as cloudinary } from "cloudinary";
+import PDFDocument from "pdfkit";
 
 const usersRouter = Express.Router();
 
@@ -113,5 +114,32 @@ usersRouter.post(
     }
   }
 );
+
+// ************************ CV PDF ************************
+
+usersRouter.get("/:userId/CV", async (req, res, next) => {
+  try {
+    const document = await UsersModel.findById(req.params.userId);
+    if (!document)
+      return next(
+        createError(404, `User with id ${req.params.userId} not found!`)
+      );
+    const doc = new PDFDocument();
+    doc.text(`Name: ${document.name}`);
+    doc.text(`Surname: ${document.surname}`);
+    doc.text(`Email: ${document.email}`);
+    doc.text(`Bio: ${document.bio}`);
+    doc.text(`Title: ${document.title}`);
+    doc.text(`Area: ${document.area}`);
+    document.experiences.map((e) => doc.text(`Experience: ${e}`));
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Conten-Disposition", `attachment; filename=${document._id}`);
+    doc.pipe(res);
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default usersRouter;
