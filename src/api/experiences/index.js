@@ -17,6 +17,7 @@ const experienceRouter = Express.Router();
 
 experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
+    console.log("body->",req.body)
     const experienceToAdd = new ExperiencesModel({
       ...req.body,
       image: "https://picsum.photos/200/300",
@@ -34,7 +35,7 @@ experienceRouter.post("/:userId/experiences", async (req, res, next) => {
       next(
         createHttpError(
           404,
-          `User witht the id: ${req.params.userId} not found.`
+          `User with the id: ${req.params.userId} not found.`
         )
       );
     }
