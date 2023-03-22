@@ -31,6 +31,8 @@ usersRouter.post("/", async (req, res, next) => {
       image:
         "https://as2.ftcdn.net/v2/jpg/03/31/69/91/1000_F_331699188_lRpvqxO5QRtwOM05gR50ImaaJgBx68vi.jpg",
       experiences: [],
+      cover:
+        "https://ns.clubmed.com/dream/PRODUCT_CENTER/DESTINATIONS/SUN/Caraibes___Amerique_du_Nord/Turks___Caicos/Turkoise/61477-utr4qogyd6-swhr.jpg",
     };
     const newUser = new UsersModel(userToAdd);
     const { _id } = await newUser.save();
@@ -112,6 +114,29 @@ usersRouter.post(
       const updatedUser = await UsersModel.findByIdAndUpdate(
         req.params.userId,
         { image: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(createError(404, `User with id ${req.params.userId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ************************ COVER PICTURE ************************
+
+usersRouter.post(
+  "/:userId/cover",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.params.userId,
+        { cover: req.file.path },
         { new: true, runValidators: true }
       );
       if (updatedUser) {
