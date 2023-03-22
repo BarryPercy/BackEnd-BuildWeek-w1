@@ -293,14 +293,12 @@ usersRouter.post(
         const letsUnFriendFirst = await UsersModel.findOneAndUpdate(
           { _id: req.params.unfriendlyId },
           { $pull: { "social.friends": req.params.unfriendedId } },
-          { new: true, runValidators: true },
-          console.log(req.params.unfriendlyId)
+          { new: true, runValidators: true }
         );
         const letsUnFriendSecond = await UsersModel.findOneAndUpdate(
           { _id: req.params.unfriendedId },
           { $pull: { "social.friends": req.params.unfriendlyId } },
-          { new: true, runValidators: true },
-          console.log(req.params.unfriendedId)
+          { new: true, runValidators: true }
         );
         res.send({
           message: `You and User with the id: ${req.params.unfriendedId} are not friends any more`,
