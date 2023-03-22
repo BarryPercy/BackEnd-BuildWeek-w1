@@ -26,6 +26,85 @@ const cloudinaryUploader = multer({
 
 const experienceRouter = Express.Router();
 
+// ************************ IMAGE ************************
+
+experienceRouter.post(
+  "/:userId/experiences/:expId/image",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const user = await UsersModel.findById(req.params.userId);
+      if (user) {
+        const index = user.experiences.findIndex(
+          (e) => e._id.toString() === req.params.expId
+        );
+
+        if (index === -1)
+          return next(
+            createHttpError(
+              404,
+              `Experience witht the id: ${req.params.expId} not found.`
+            )
+          );
+        user.experiences[index] = {
+          ...user.experiences[index].toObject(),
+          image: req.file.path,
+          updatedAt: new Date(),
+        };
+        await user.save();
+        res.send(user);
+      } else {
+        next(createError(404, `User with id ${req.params.userId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// ************************ CSV ************************
+
+experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
+  try {
+    const readFile = util.promisify(fs.readFile);
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=experiences.csv"
+    );
+    const user = await UsersModel.findById(req.params.userId);
+    if (!user)
+      return next(
+        createError(404, `User with id ${req.params.userId} not found!`)
+      );
+    const expArr = user.experiences;
+    const csvWriter = createObjectCsvWriter({
+      path: "output.csv",
+      header: [
+        { id: "userId", title: "userId" },
+        { id: "experienceId", title: "experienceId" },
+        { id: "role", title: "Role" },
+        { id: "company", title: "Company" },
+        { id: "description", title: "Description" },
+        { id: "area", title: "Area" },
+      ],
+    });
+    const rows = expArr.map((e) => ({
+      userId: user._id,
+      experienceId: e._id,
+      role: e.role,
+      company: e.company,
+      description: e.description,
+      area: e.area,
+    }));
+    console.log("CSV file created successfully!");
+    await csvWriter.writeRecords(rows);
+    const csvFile = await readFile("output.csv", "utf-8");
+    res.send(csvFile);
+  } catch (error) {
+    next(error);
+  }
+});
+
 experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
     console.log("body->", req.body);
@@ -176,84 +255,5 @@ experienceRouter.delete(
     }
   }
 );
-
-// ************************ IMAGE ************************
-
-experienceRouter.post(
-  "/:userId/experiences/:expId/image",
-  cloudinaryUploader,
-  async (req, res, next) => {
-    try {
-      const user = await UsersModel.findById(req.params.userId);
-      if (user) {
-        const index = user.experiences.findIndex(
-          (e) => e._id.toString() === req.params.expId
-        );
-
-        if (index === -1)
-          return next(
-            createHttpError(
-              404,
-              `Experience witht the id: ${req.params.expId} not found.`
-            )
-          );
-        user.experiences[index] = {
-          ...user.experiences[index].toObject(),
-          image: req.file.path,
-          updatedAt: new Date(),
-        };
-        await user.save();
-        res.send(user);
-      } else {
-        next(createError(404, `User with id ${req.params.userId} not found!`));
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-// ************************ CSV ************************
-
-experienceRouter.get("/:userId/experiencesCSV", async (req, res, next) => {
-  try {
-    const readFile = util.promisify(fs.readFile);
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=experiences.csv"
-    );
-    const user = await UsersModel.findById(req.params.userId);
-    if (!user)
-      return next(
-        createError(404, `User with id ${req.params.userId} not found!`)
-      );
-    const expArr = user.experiences;
-    const csvWriter = createObjectCsvWriter({
-      path: "output.csv",
-      header: [
-        { id: "userId", title: "userId" },
-        { id: "experienceId", title: "experienceId" },
-        { id: "role", title: "Role" },
-        { id: "company", title: "Company" },
-        { id: "description", title: "Description" },
-        { id: "area", title: "Area" },
-      ],
-    });
-    const rows = expArr.map((e) => ({
-      userId: user._id,
-      experienceId: e._id,
-      role: e.role,
-      company: e.company,
-      description: e.description,
-      area: e.area,
-    }));
-    console.log("CSV file created successfully!");
-    await csvWriter.writeRecords(rows);
-    const csvFile = await readFile("output.csv", "utf-8");
-    res.send(csvFile);
-  } catch (error) {
-    next(error);
-  }
-});
 
 export default experienceRouter;
