@@ -14,6 +14,14 @@ const cloudinaryUploader = multer({
     cloudinary,
     params: { folder: "users/image" },
   }),
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      const error = new Error("Only JPEG and PNG files are allowed!");
+      error.status = 400; // HTTP status code for Bad Request
+      return cb(error, false);
+    }
+    cb(null, true);
+  },
 }).single("image");
 
 usersRouter.post("/", async (req, res, next) => {

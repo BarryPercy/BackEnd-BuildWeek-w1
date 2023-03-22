@@ -11,13 +11,21 @@ const cloudinaryUploader = multer({
     cloudinary,
     params: { folder: "experiences/image" },
   }),
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      const error = new Error("Only JPEG and PNG files are allowed!");
+      error.status = 400; // HTTP status code for Bad Request
+      return cb(error, false);
+    }
+    cb(null, true);
+  },
 }).single("image");
 
 const experienceRouter = Express.Router();
 
 experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
-    console.log("body->",req.body)
+    console.log("body->", req.body);
     const experienceToAdd = new ExperiencesModel({
       ...req.body,
       image: "https://picsum.photos/200/300",
