@@ -44,7 +44,10 @@ usersRouter.post("/", async (req, res, next) => {
 
 usersRouter.get("/", async (req, res, next) => {
   try {
-    const users = await UsersModel.find();
+    const users = await UsersModel.find().populate({
+      path: "social.friends social.sent social.pending",
+      select: "name surname image",
+    });
     res.send(users);
   } catch (error) {
     next(error);
@@ -53,7 +56,10 @@ usersRouter.get("/", async (req, res, next) => {
 
 usersRouter.get("/:userId", async (req, res, next) => {
   try {
-    const user = await UsersModel.findById(req.params.userId);
+    const user = await UsersModel.findById(req.params.userId).populate({
+      path: "social.friends social.sent social.pending",
+      select: "name surname image",
+    });
     if (user) {
       res.send(user);
     } else {
@@ -252,32 +258,40 @@ usersRouter.post(
           )
         );
 
-      const isSent = await UsersModel.findOne({
-        "social.sent": req.params.reciverId,
-      });
+      const isSent = sender.social.sent.find(
+        (e) => e.toString() === req.params.reciverId
+      );
+
+      const isFriend = sender.social.friends.find(
+        (e) => e.toString() === req.params.reciverId
+      );
 
       if (isSent) {
         const letsUnSend = await UsersModel.findOneAndUpdate(
-          req.params.senderId,
+          { _id: req.params.senderId },
           { $pull: { "social.sent": req.params.reciverId } },
           { new: true, runValidators: true }
         );
         const letsUnPending = await UsersModel.findByIdAndUpdate(
-          req.params.reciverId,
+          { _id: req.params.reciverId },
           { $pull: { "social.pending": req.params.senderId } },
           { new: true, runValidators: true }
         );
         res.send({
           message: `Friend request cancelled to ${req.params.reciverId}`,
         });
+      } else if (isFriend) {
+        res.send({
+          message: `Id: ${req.params.senderId} is already your friend.`,
+        });
       } else {
         const letsSend = await UsersModel.findOneAndUpdate(
-          req.params.senderId,
+          { _id: req.params.senderId },
           { $push: { "social.sent": req.params.reciverId } },
           { new: true, runValidators: true }
         );
         const letsPending = await UsersModel.findByIdAndUpdate(
-          req.params.reciverId,
+          { _id: req.params.reciverId },
           { $push: { "social.pending": req.params.senderId } },
           { new: true, runValidators: true }
         );
@@ -312,13 +326,13 @@ usersRouter.post(
           )
         );
 
-      const isPending = await UsersModel.findOne({
-        "social.pending": req.params.acceptedId,
+      const isPending = accepter.social.pending.find((e) => {
+        e.toString() === req.params.acceptedId;
       });
 
       if (isPending) {
         const letsAcceptFriend = await UsersModel.findByIdAndUpdate(
-          req.params.accepterId,
+          { _id: req.params.accepterId },
           {
             $pull: { "social.pending": req.params.acceptedId },
             $push: { "social.friends": req.params.acceptedId },
@@ -326,7 +340,7 @@ usersRouter.post(
           { new: true, runValidators: true }
         );
         const letsBeAccepted = await UsersModel.findOneAndUpdate(
-          req.params.acceptedId,
+          { _id: req.params.acceptedId },
           {
             $pull: { "social.sent": req.params.accepterId },
             $push: { "social.friends": req.params.accepterId },

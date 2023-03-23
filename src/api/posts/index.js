@@ -112,24 +112,22 @@ postsRouter.post("/:postId/likes/:userId", async (req, res, next) => {
         )
       );
 
-    const isLikedYet = await PostsModel.findOne({
-      likes: req.params.userId,
-    });
+    const isLikedYet = postToLike.likes.includes(req.params.userId);
 
     if (isLikedYet) {
       const letsDislike = await PostsModel.findByIdAndUpdate(
-        req.params.postId,
+        { _id: req.params.postId },
         { $pull: { likes: req.params.userId } },
         { new: true, runValidators: true }
       );
-      res.send({ LikeLength: letsDislike.likes.length, DisLiked: letsDislike });
+      res.send({ LikeLength: letsDislike.likes.length, Liked: false });
     } else {
       const letsLike = await PostsModel.findByIdAndUpdate(
-        req.params.postId,
+        { _id: req.params.postId },
         { $push: { likes: req.params.userId } },
         { new: true, runValidators: true }
       );
-      res.send({ LikeLength: letsLike.likes.length, Liked: letsLike });
+      res.send({ LikeLength: letsLike.likes.length, Liked: true });
     }
   } catch (error) {
     next(error);
