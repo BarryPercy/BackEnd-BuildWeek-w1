@@ -258,13 +258,9 @@ usersRouter.post(
           )
         );
 
-      const isSent = sender.social.sent.find(
-        (e) => e.toString() === req.params.reciverId
-      );
-
-      const isFriend = sender.social.friends.find(
-        (e) => e.toString() === req.params.reciverId
-      );
+      const isSent = sender.social.sent.includes(req.params.reciverId);
+      const isFriend = sender.social.friends.includes(req.params.reciverId);
+      const isPending = sender.social.pending.includes(req.params.reciverId);
 
       if (isSent) {
         const letsUnSend = await UsersModel.findOneAndUpdate(
@@ -283,6 +279,10 @@ usersRouter.post(
       } else if (isFriend) {
         res.send({
           message: `Id: ${req.params.senderId} is already your friend.`,
+        });
+      } else if (isPending) {
+        res.send({
+          message: `You have a pending request from id: ${req.params.senderId}, accept it to be friends`,
         });
       } else {
         const letsSend = await UsersModel.findOneAndUpdate(
@@ -326,9 +326,7 @@ usersRouter.post(
           )
         );
 
-      const isPending = accepter.social.pending.find((e) => {
-        e.toString() === req.params.acceptedId;
-      });
+      const isPending = accepter.social.pending.includes(req.params.acceptedId);
 
       if (isPending) {
         const letsAcceptFriend = await UsersModel.findByIdAndUpdate(
@@ -352,9 +350,11 @@ usersRouter.post(
           message: `User ${req.params.acceptedId} accepted as friend`,
         });
       } else {
-        createHttpError(
-          404,
-          `No pending request with the id: ${req.params.acceptedId} not found.`
+        return next(
+          createHttpError(
+            404,
+            `No pending request with the id: ${req.params.acceptedId} not found.`
+          )
         );
       }
     } catch (error) {
@@ -384,13 +384,11 @@ usersRouter.post(
           )
         );
 
-      const areTheyFriends = await UsersModel.findOne({
-        "social.friends": req.params.unfriendedId,
-      });
+      const letsCheck = unFriendly.social.friends.includes(
+        req.params.unfriendedId
+      );
 
-      const letsCheck = await areTheyFriends._id.toString();
-
-      if (letsCheck === req.params.unfriendlyId) {
+      if (letsCheck) {
         const letsUnFriendFirst = await UsersModel.findOneAndUpdate(
           { _id: req.params.unfriendlyId },
           { $pull: { "social.friends": req.params.unfriendedId } },
@@ -405,9 +403,11 @@ usersRouter.post(
           message: `You and User with the id: ${req.params.unfriendedId} are not friends any more`,
         });
       } else {
-        createHttpError(
-          404,
-          `User with the id: ${req.params.unfriendlyId} and User with the id:${req.params.unfriendedId}are not friends`
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.unfriendlyId} and User with the id:${req.params.unfriendedId}are not friends`
+          )
         );
       }
     } catch (error) {
