@@ -5,6 +5,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 import UsersModel from "./model.js";
 import { v2 as cloudinary } from "cloudinary";
 import PDFDocument from "pdfkit";
+import request from "request";
 
 const usersRouter = Express.Router();
 
@@ -13,14 +14,25 @@ const cloudinaryUploader = multer({
     cloudinary,
     params: { folder: "users/image" },
   }),
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      const error = new Error("Only JPEG and PNG files are allowed!");
+      error.status = 400; // HTTP status code for Bad Request
+      return cb(error, false);
+    }
+    cb(null, true);
+  },
 }).single("image");
 
 usersRouter.post("/", async (req, res, next) => {
   try {
     const userToAdd = {
       ...req.body,
-      image: "https://picsum.photos/200/300",
+      image:
+        "https://as2.ftcdn.net/v2/jpg/03/31/69/91/1000_F_331699188_lRpvqxO5QRtwOM05gR50ImaaJgBx68vi.jpg",
       experiences: [],
+      cover:
+        "https://ns.clubmed.com/dream/PRODUCT_CENTER/DESTINATIONS/SUN/Caraibes___Amerique_du_Nord/Turks___Caicos/Turkoise/61477-utr4qogyd6-swhr.jpg",
     };
     const newUser = new UsersModel(userToAdd);
     const { _id } = await newUser.save();
@@ -115,6 +127,29 @@ usersRouter.post(
   }
 );
 
+// ************************ COVER PICTURE ************************
+
+usersRouter.post(
+  "/:userId/cover",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const updatedUser = await UsersModel.findByIdAndUpdate(
+        req.params.userId,
+        { cover: req.file.path },
+        { new: true, runValidators: true }
+      );
+      if (updatedUser) {
+        res.send(updatedUser);
+      } else {
+        next(createError(404, `User with id ${req.params.userId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 // ************************ CV PDF ************************
 
 usersRouter.get("/:userId/CV", async (req, res, next) => {
@@ -125,18 +160,70 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
         createError(404, `User with id ${req.params.userId} not found!`)
       );
     const doc = new PDFDocument();
-    doc.text(`Name: ${document.name}`);
-    doc.text(`Surname: ${document.surname}`);
-    doc.text(`Email: ${document.email}`);
-    doc.text(`Bio: ${document.bio}`);
-    doc.text(`Title: ${document.title}`);
-    doc.text(`Area: ${document.area}`);
-    document.experiences.map((e) => doc.text(`Experience: ${e}`));
 
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Conten-Disposition", `attachment; filename=${document._id}`);
-    doc.pipe(res);
-    doc.end();
+    request(
+      { url: document.image, encoding: null },
+      function (err, response, body) {
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        // Create a buffer from the image data
+        const imageBuffer = Buffer.from(body);
+
+        // Create an image object from the buffer
+        const image = doc.openImage(imageBuffer);
+
+        // Add the image to the PDF document
+        doc.image(image, {
+          fit: [120, 120], // Width and height of the image in pixels
+          align: "center",
+          valign: "center",
+        });
+        doc.text(` `);
+        doc.text(`Name: ${document.name}`);
+        doc.text(`Surname: ${document.surname}`);
+        doc.text(`Email: ${document.email}`);
+        doc.text(`Bio: ${document.bio}`);
+        doc.text(`Title: ${document.title}`);
+        doc.text(`Area: ${document.area}`);
+        doc.text(` `);
+        if (document.experiences.length > 0) {
+          doc.text(`Experiences:`);
+          document.experiences.map((e) => {
+            doc.text(`    role: ${e.role}`),
+              doc.text(`    company: ${e.company}`),
+              doc.text(`    Description: ${e.description}`);
+            doc.text(`    Area: ${e.area}`);
+            doc.text(`    Start Date: ${e.startDate}`);
+            if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
+            doc.text(` `);
+          });
+        }
+        if (document.educations.length > 0) {
+          doc.text(`Educations:`);
+          document.educations.map((e) => {
+            doc.text(`    School: ${e.school}`);
+            if (e.degree) doc.text(`    Degree: ${e.degree}`);
+            if (e.field) doc.text(`    Field: ${e.field}`);
+            if (e.grade) doc.text(`   Grade: ${e.grade}`);
+            if (e.activity) doc.text(`    Activity: ${e.activity}`);
+            if (e.startDate) doc.text(`    Start Date: ${e.startDate}`);
+            if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
+            doc.text(` `);
+          });
+        }
+        // Set the PDF response headers and send the PDF document to the client
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename=${document._id}`
+        );
+        doc.pipe(res);
+        doc.end();
+      }
+    );
   } catch (error) {
     next(error);
   }

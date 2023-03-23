@@ -11,6 +11,14 @@ const cloudinaryUploader = multer({
     cloudinary,
     params: { folder: "education/image" },
   }),
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      const error = new Error("Only JPEG and PNG files are allowed!");
+      error.status = 400; // HTTP status code for Bad Request
+      return cb(error, false);
+    }
+    cb(null, true);
+  },
 }).single("image");
 
 const educationRouter = Express.Router();
@@ -29,7 +37,7 @@ educationRouter.post("/:userId/educations", async (req, res, next) => {
       { new: true, runValidator: true }
     );
     if (updatedUser) {
-      res.send(updatedUser);
+      res.send(educationToAdd);
     } else {
       next(
         createHttpError(
