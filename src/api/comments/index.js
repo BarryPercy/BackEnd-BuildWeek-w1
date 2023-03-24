@@ -10,7 +10,7 @@ commentsRouter.get("/:postId/comments", async (req, res, next) => {
     const post = await PostModel.findById(req.params.postId).populate({
       path: "comments",
       select: "comment user",
-      populate: { path: "user", select: "name surname image" },
+      populate: { path: "user", select: "name surname image title" },
     });
     if (post) {
       res.send(post.comments);
