@@ -117,7 +117,6 @@ educationRouter.put(
             ...req.body,
             updatedAt: new Date(),
           };
-          console.log(user);
           await user.save();
           res.send(user);
         } else {

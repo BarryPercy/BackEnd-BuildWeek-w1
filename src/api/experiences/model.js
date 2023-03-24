@@ -10,8 +10,8 @@ const experiencesSchema = new Schema({
   description: { type: String, required: true },
   area: { type: String, required: true },
   image: { type: String, required: true },
-  createdAt: { type: Date, required: true },
-  updatedAt: { type: Date, required: true },
+  createdAt: { type: Date},
+  updatedAt: { type: Date },
 });
 
 export default model("Experience", experiencesSchema);

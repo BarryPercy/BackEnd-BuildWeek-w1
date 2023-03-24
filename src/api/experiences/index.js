@@ -96,7 +96,6 @@ experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
       description: e.description,
       area: e.area,
     }));
-    console.log("CSV file created successfully!");
     await csvWriter.writeRecords(rows);
     const csvFile = await readFile("output.csv", "utf-8");
     res.send(csvFile);
@@ -107,7 +106,6 @@ experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
 
 experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   try {
-    console.log("body->", req.body);
     const experienceToAdd = new ExperiencesModel({
       ...req.body,
       image: "https://picsum.photos/200/300",
@@ -195,13 +193,11 @@ experienceRouter.put(
           (e) => e._id.toString() === req.params.experienceId
         );
         if (index !== -1) {
-          console.log(`user.experiences[index]: ${user.experiences[index]}`);
           user.experiences[index] = {
             ...user.experiences[index].toObject(),
             ...req.body,
             updatedAt: new Date(),
           };
-          console.log(user);
           await user.save();
           res.send(user);
         } else {

@@ -12,8 +12,8 @@ const educationsSchema = new Schema({
   activity: { type: String },
   image: { type: String },
   description: { type: String },
-  createdAt: { type: Date, required: true },
-  updatedAt: { type: Date, required: true },
+  createdAt: { type: Date},
+  updatedAt: { type: Date},
 });
 
 export default model("Education", educationsSchema);
