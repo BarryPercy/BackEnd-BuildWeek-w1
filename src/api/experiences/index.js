@@ -78,7 +78,7 @@ experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
       );
     const expArr = user.experiences;
     const csvWriter = createObjectCsvWriter({
-      path: "output.csv",
+      //path: "output.csv",
       header: [
         { id: "userId", title: "userId" },
         { id: "experienceId", title: "experienceId" },
@@ -96,8 +96,8 @@ experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
       description: e.description,
       area: e.area,
     }));
-    await csvWriter.writeRecords(rows);
-    const csvFile = await readFile("output.csv", "utf-8");
+    // await csvWriter.writeRecords(rows);
+    // const csvFile = await readFile("output.csv", "utf-8");
     res.send(rows);
   } catch (error) {
     next(error);
