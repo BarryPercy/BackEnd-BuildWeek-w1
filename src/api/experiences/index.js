@@ -6,8 +6,9 @@ import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { createObjectCsvWriter } from "csv-writer";
 import util from "util";
+import { Transform } from "@json2csv/node";
+import { pipeline } from "stream";
 
 const cloudinaryUploader = multer({
   storage: new CloudinaryStorage({
@@ -66,39 +67,26 @@ experienceRouter.post(
 
 experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
   try {
-    const readFile = util.promisify(fs.readFile);
-    res.setHeader(
-      "Content-Disposition",
-      "attachment; filename=experiences.csv"
-    );
     const user = await UsersModel.findById(req.params.userId);
     if (!user)
       return next(
         createError(404, `User with id ${req.params.userId} not found!`)
       );
     const expArr = user.experiences;
-    const csvWriter = createObjectCsvWriter({
-      //path: "output.csv",
-      header: [
-        { id: "userId", title: "userId" },
-        { id: "experienceId", title: "experienceId" },
-        { id: "role", title: "Role" },
-        { id: "company", title: "Company" },
-        { id: "description", title: "Description" },
-        { id: "area", title: "Area" },
-      ],
+    const filename = `${(
+      user.name
+    ).toLowerCase()}-experiences.csv`;
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${filename}.csv`
+    );
+    const src = JSON.stringify(expArr);
+    const transform = new Transform({
+      fields: [ "role", "company", "description", "area"],
     });
-    const rows = expArr.map((e) => ({
-      userId: user._id,
-      experienceId: e._id,
-      role: e.role,
-      company: e.company,
-      description: e.description,
-      area: e.area,
-    }));
-    // await csvWriter.writeRecords(rows);
-    // const csvFile = await readFile("output.csv", "utf-8");
-    res.send(rows);
+    pipeline(src, transform, res, (error) => {
+      if (error) console.log(error);
+    });
   } catch (error) {
     next(error);
   }
