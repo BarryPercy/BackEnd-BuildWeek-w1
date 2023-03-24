@@ -218,7 +218,7 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
           "Content-Disposition",
-          `attachment; filename=${document._id}`
+          `attachment; filename=${document._id}.pdf`
         );
         doc.pipe(res);
         doc.end();
