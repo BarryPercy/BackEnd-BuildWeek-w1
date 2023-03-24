@@ -41,9 +41,9 @@ const usersSchema = new Schema(
       },
     ],
     social: {
-      friends: [{ type: String }],
-      sent: [{ type: String }],
-      pending: [{ type: String }],
+      friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      sent: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      pending: [{ type: Schema.Types.ObjectId, ref: "User" }],
     },
   },
   { strict: "throw" },

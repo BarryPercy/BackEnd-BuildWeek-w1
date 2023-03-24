@@ -44,7 +44,10 @@ usersRouter.post("/", async (req, res, next) => {
 
 usersRouter.get("/", async (req, res, next) => {
   try {
-    const users = await UsersModel.find();
+    const users = await UsersModel.find().populate({
+      path: "social.friends social.sent social.pending",
+      select: "name surname image",
+    });
     res.send(users);
   } catch (error) {
     next(error);
@@ -53,7 +56,10 @@ usersRouter.get("/", async (req, res, next) => {
 
 usersRouter.get("/:userId", async (req, res, next) => {
   try {
-    const user = await UsersModel.findById(req.params.userId);
+    const user = await UsersModel.findById(req.params.userId).populate({
+      path: "social.friends social.sent social.pending",
+      select: "name surname image",
+    });
     if (user) {
       res.send(user);
     } else {
@@ -252,34 +258,46 @@ usersRouter.post(
           )
         );
 
-      const isSent = await UsersModel.findOne({
-        "social.sent": req.params.reciverId,
-      });
+      const isSent = sender.social.sent.includes(req.params.reciverId);
+      const isFriend = sender.social.friends.includes(req.params.reciverId);
+      const isPending = sender.social.pending.includes(req.params.reciverId);
 
       if (isSent) {
         const letsUnSend = await UsersModel.findOneAndUpdate(
-          req.params.senderId,
+          { _id: req.params.senderId },
           { $pull: { "social.sent": req.params.reciverId } },
           { new: true, runValidators: true }
         );
         const letsUnPending = await UsersModel.findByIdAndUpdate(
-          req.params.reciverId,
+          { _id: req.params.reciverId },
           { $pull: { "social.pending": req.params.senderId } },
           { new: true, runValidators: true }
         );
-        res.send({ letsUnSend, letsUnPending });
+        res.send({
+          message: `Friend request cancelled to ${req.params.reciverId}`,
+        });
+      } else if (isFriend) {
+        res.send({
+          message: `Id: ${req.params.senderId} is already your friend.`,
+        });
+      } else if (isPending) {
+        res.send({
+          message: `You have a pending request from id: ${req.params.senderId}, accept it to be friends`,
+        });
       } else {
         const letsSend = await UsersModel.findOneAndUpdate(
-          req.params.senderId,
+          { _id: req.params.senderId },
           { $push: { "social.sent": req.params.reciverId } },
           { new: true, runValidators: true }
         );
         const letsPending = await UsersModel.findByIdAndUpdate(
-          req.params.reciverId,
+          { _id: req.params.reciverId },
           { $push: { "social.pending": req.params.senderId } },
           { new: true, runValidators: true }
         );
-        res.send({ letsSend, letsPending });
+        res.send({
+          message: `Friend request sended to ${req.params.reciverId}`,
+        });
       }
     } catch (error) {
       next(error);
@@ -291,6 +309,107 @@ usersRouter.post(
   "/:accepterId/acceptfriend/:acceptedId",
   async (req, res, next) => {
     try {
+      const accepter = await UsersModel.findById(req.params.accepterId);
+      if (!accepter)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.accepterId} not found.`
+          )
+        );
+      const accepted = await UsersModel.findById(req.params.acceptedId);
+      if (!accepted)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.acceptedId} not found.`
+          )
+        );
+
+      const isPending = accepter.social.pending.includes(req.params.acceptedId);
+
+      if (isPending) {
+        const letsAcceptFriend = await UsersModel.findByIdAndUpdate(
+          { _id: req.params.accepterId },
+          {
+            $pull: { "social.pending": req.params.acceptedId },
+            $push: { "social.friends": req.params.acceptedId },
+          },
+          { new: true, runValidators: true }
+        );
+        const letsBeAccepted = await UsersModel.findOneAndUpdate(
+          { _id: req.params.acceptedId },
+          {
+            $pull: { "social.sent": req.params.accepterId },
+            $push: { "social.friends": req.params.accepterId },
+          },
+          { new: true, runValidators: true }
+        );
+
+        res.send({
+          message: `User ${req.params.acceptedId} accepted as friend`,
+        });
+      } else {
+        return next(
+          createHttpError(
+            404,
+            `No pending request with the id: ${req.params.acceptedId} not found.`
+          )
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+usersRouter.post(
+  "/:unfriendlyId/unfriend/:unfriendedId",
+  async (req, res, next) => {
+    try {
+      const unFriendly = await UsersModel.findById(req.params.unfriendlyId);
+      if (!unFriendly)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.unfriendlyId} not found.`
+          )
+        );
+      const unFriended = await UsersModel.findById(req.params.unfriendedId);
+      if (!unFriended)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.unfriendedId} not found.`
+          )
+        );
+
+      const letsCheck = unFriendly.social.friends.includes(
+        req.params.unfriendedId
+      );
+
+      if (letsCheck) {
+        const letsUnFriendFirst = await UsersModel.findOneAndUpdate(
+          { _id: req.params.unfriendlyId },
+          { $pull: { "social.friends": req.params.unfriendedId } },
+          { new: true, runValidators: true }
+        );
+        const letsUnFriendSecond = await UsersModel.findOneAndUpdate(
+          { _id: req.params.unfriendedId },
+          { $pull: { "social.friends": req.params.unfriendlyId } },
+          { new: true, runValidators: true }
+        );
+        res.send({
+          message: `You and User with the id: ${req.params.unfriendedId} are not friends any more`,
+        });
+      } else {
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.unfriendlyId} and User with the id:${req.params.unfriendedId}are not friends`
+          )
+        );
+      }
     } catch (error) {
       next(error);
     }

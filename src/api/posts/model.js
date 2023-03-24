@@ -8,7 +8,7 @@ const postsSchema = new Schema(
     image: { type: String },
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     comments: [{ type: Schema.Types.ObjectId, ref: "Comments" }],
-    likes: [{ type: Schema.Types.ObjectId, ref: "Likes" }],
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
@@ -19,7 +19,7 @@ postsSchema.static("findpostsWithUsers", async function (query) {
     .skip(query.options.skip)
     .sort(query.options.sort)
     .populate({
-      path: "user comments",
+      path: "user comments likes",
       select: "title name surname image comment",
     });
   const total = await this.countDocuments(query.criteria);
