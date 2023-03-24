@@ -7,12 +7,13 @@ const commentsRouter = express.Router();
 
 commentsRouter.get("/:postId/comments", async (req, res, next) => {
   try {
-    const comment = await PostModel.findById(req.params.postId).populate({
+    const post = await PostModel.findById(req.params.postId).populate({
       path: "comments",
       select: "comment user",
+      populate: { path: "user", select: "name surname image" },
     });
-    if (comment) {
-      res.send(comment.comments);
+    if (post) {
+      res.send(post.comments);
     } else {
       next(
         createHttpError(404, `Post with id ${req.params.postId} not found!`)
@@ -27,6 +28,7 @@ commentsRouter.get("/:postId/comments/:commentId", async (req, res, next) => {
     const comment = await PostModel.findById(req.params.postId).populate({
       path: "comments",
       select: "comment user",
+      populate: { path: "user", select: "name surname image" },
     });
     if (!comment) {
       next(
