@@ -180,21 +180,17 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
 
         // Create an image object from the buffer
         const image = doc.openImage(imageBuffer);
-
-        // Add the image to the PDF document
-        doc.image(image, {
-          fit: [120, 120], // Width and height of the image in pixels
-          align: "center",
-          valign: "center",
-        });
-        doc.text(` `);
+        doc.fontSize(20);
+        doc.text(`Curriculum Vitae`, { align: "center" });
+        doc.fontSize(13);
+        doc.moveDown();
         doc.text(`Name: ${document.name}`);
         doc.text(`Surname: ${document.surname}`);
         doc.text(`Email: ${document.email}`);
         doc.text(`Bio: ${document.bio}`);
         doc.text(`Title: ${document.title}`);
         doc.text(`Area: ${document.area}`);
-        doc.text(` `);
+        doc.moveDown();
         if (document.experiences.length > 0) {
           doc.text(`Experiences:`);
           document.experiences.map((e) => {
@@ -204,7 +200,7 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
             doc.text(`    Area: ${e.area}`);
             doc.text(`    Start Date: ${e.startDate}`);
             if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
-            doc.text(` `);
+            doc.moveDown();
           });
         }
         if (document.educations.length > 0) {
@@ -220,6 +216,12 @@ usersRouter.get("/:userId/CV", async (req, res, next) => {
             doc.text(` `);
           });
         }
+        // Add the image to the PDF document
+        doc.image(image, {
+          fit: [120, 120],
+          align: "center",
+          valign: "center",
+        });
         // Set the PDF response headers and send the PDF document to the client
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
