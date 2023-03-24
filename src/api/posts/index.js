@@ -51,8 +51,7 @@ postsRouter.post("/", async (req, res, next) => {
   try {
     const postToAdd = {
       ...req.body,
-      image:
-        "https://upload.wikimedia.org/wikipedia/en/9/9a/Trollface_non-free.png",
+      image:"",
     };
     const newPost = new PostsModel(postToAdd);
     const { _id } = await newPost.save();
