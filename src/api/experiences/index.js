@@ -98,7 +98,7 @@ experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
     }));
     await csvWriter.writeRecords(rows);
     const csvFile = await readFile("output.csv", "utf-8");
-    res.send(csvFile);
+    res.send(rows);
   } catch (error) {
     next(error);
   }
