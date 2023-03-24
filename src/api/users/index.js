@@ -355,7 +355,65 @@ usersRouter.post(
         return next(
           createHttpError(
             404,
-            `No pending request with the id: ${req.params.acceptedId} not found.`
+            `No pending request with the id: ${req.params.acceptedId}.`
+          )
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+usersRouter.post(
+  "/:cancellerId/cancelrequest/:cancelledId",
+  async (req, res, next) => {
+    try {
+      const canceller = await UsersModel.findById(req.params.cancellerId);
+      if (!canceller)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.cancellerId} not found.`
+          )
+        );
+      const cancelled = await UsersModel.findById(req.params.cancelledId);
+      if (!cancelled)
+        return next(
+          createHttpError(
+            404,
+            `User with the id: ${req.params.cancelledId} not found.`
+          )
+        );
+
+      const isPending = canceller.social.pending.includes(
+        req.params.cancelledId
+      );
+
+      if (isPending) {
+        const letsCancelRequest = await UsersModel.findByIdAndUpdate(
+          { _id: req.params.cancellerId },
+          {
+            $pull: { "social.pending": req.params.cancelledId },
+          },
+          { new: true, runValidators: true }
+        );
+        const letsCancelRequest2 = await UsersModel.findOneAndUpdate(
+          { _id: req.params.cancelledId },
+          {
+            $pull: { "social.sent": req.params.cancellerId },
+          },
+          { new: true, runValidators: true }
+        );
+
+        res.send({
+          message: `User ${req.params.cancelledId} friend request cancelled`,
+        });
+      } else {
+        return next(
+          createHttpError(
+            404,
+            `No pending request with the id: ${req.params.cancelledId}.`
           )
         );
       }
