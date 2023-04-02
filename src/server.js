@@ -8,10 +8,8 @@ import {
   notFoundHandler,
 } from "./errorHandlers.js";
 import { pgConnect } from "./db.js"
-// import experienceRouter from "./api/experiences/index.js";
-// import createHttpError from "http-errors";
-// import educationRouter from "./api/education/index.js";
-// import commentsRouter from "./api/comments/index.js";
+import experienceRouter from "./api/experiences/index.js";
+import commentsRouter from "./api/comments/index.js";
 import postsRouter from "./api/posts/index.js";
 
 const server = Express();
@@ -22,9 +20,9 @@ server.use(Express.json());
 
 server.use("/api/users", usersRouter);
 server.use("/api/posts", postsRouter);
-// server.use("/api/users", experienceRouter);
+server.use("/api/users", experienceRouter);
 // server.use("/api/users", educationRouter);
-// server.use("/api/posts", commentsRouter);
+server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
 // server.use("/users", CSVRouter);

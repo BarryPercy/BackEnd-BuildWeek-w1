@@ -1,14 +1,23 @@
-import mongoose from "mongoose";
+import { DataTypes } from "sequelize"
+import sequelize from "../../db.js"
+import UsersModel from "../users/model.js";
 
-const { Schema, model } = mongoose;
-
-const commentsSchema = new Schema(
+const CommentsModel = sequelize.define(
+  "comment",
   {
-    comment: { type: String, required: true },
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    post: [{ type: Schema.Types.ObjectId, ref: "Post", required: true }],
+    commentId: {
+      type: DataTypes.UUID,
+      primaryKey: true,
+      defaultValue: DataTypes.UUIDV4, 
+    },
+    comment: {
+      type: DataTypes.STRING(200), 
+      allowNull: false,
+    }
   },
-  { timestamps: true }
 );
 
-export default model("Comments", commentsSchema);
+UsersModel.hasMany(CommentsModel, { foreignKey: { name: "userId", allowNull: false } })
+CommentsModel.belongsTo(UsersModel, { foreignKey: { name: "userId", allowNull: false } })
+
+export default CommentsModel

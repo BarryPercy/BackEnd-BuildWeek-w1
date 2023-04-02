@@ -1,6 +1,7 @@
 import { DataTypes } from "sequelize"
 import sequelize from "../../db.js"
 import UsersModel from "../users/model.js"
+import CommentsModel from "../comments/model.js";
 
 
 const PostsModel = sequelize.define(
@@ -24,5 +25,8 @@ const PostsModel = sequelize.define(
 
 UsersModel.hasMany(PostsModel, { foreignKey: { name: "userId", allowNull: false } })
 PostsModel.belongsTo(UsersModel, { foreignKey: { name: "userId", allowNull: false } })
+
+PostsModel.hasMany(CommentsModel, { foreignKey: { name: "postId", allowNull: false } })
+CommentsModel.belongsTo(PostsModel, { foreignKey: { name: "postId", allowNull: false } })
 
 export default PostsModel

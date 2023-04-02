@@ -8,6 +8,7 @@ import PDFDocument from "pdfkit";
 import request from "request";
 import { Op } from "sequelize"
 import PostsModel from "../posts/model.js";
+import ExperiencesModel from "../experiences/model.js";
 
 const usersRouter = Express.Router();
 
@@ -53,7 +54,8 @@ usersRouter.get("/", async (req, res, next) => {
       ],
       // attributes: ["firstName", "lastName"],
       include:[
-        {model: PostsModel, attributes: ["text"],}
+        {model: PostsModel, attributes: ["text"],},
+        {model: ExperiencesModel,attributes:["role","company","startDate","endDate","area","description"]}
       ]
     })
     res.send(users);
