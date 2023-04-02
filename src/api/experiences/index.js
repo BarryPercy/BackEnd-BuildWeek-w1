@@ -5,10 +5,6 @@ import createHttpError from "http-errors";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
-import util from "util";
-import { Transform } from "@json2csv/node";
-import { pipeline } from "stream";
 
 const cloudinaryUploader = multer({
   storage: new CloudinaryStorage({
@@ -34,63 +30,21 @@ experienceRouter.post(
   cloudinaryUploader,
   async (req, res, next) => {
     try {
-      const user = await UsersModel.findById(req.params.userId);
-      if (user) {
-        const index = user.experiences.findIndex(
-          (e) => e._id.toString() === req.params.expId
-        );
-
-        if (index === -1)
-          return next(
-            createHttpError(
-              404,
-              `Experience with the id: ${req.params.expId} not found.`
-            )
-          );
-        user.experiences[index] = {
-          ...user.experiences[index].toObject(),
-          image: req.file.path,
-          updatedAt: new Date(),
-        };
-        await user.save();
-        res.send(user);
+      const imageToAddObject = {
+        image:req.file.path,
+      }
+      const [numberOfUpdatedRows, updatedRecords] = await ExperiencesModel.update(imageToAddObject, { where: { experienceId: req.params.expId }, returning: true })
+      console.log()
+      if (numberOfUpdatedRows === 1) {
+        res.send(updatedRecords[0])
       } else {
-        next(createError(404, `User with id ${req.params.userId} not found!`));
+        next(createHttpError(404, `experience with id ${req.params.experienceId} not found!`));
       }
     } catch (error) {
       next(error);
     }
   }
 );
-
-// ************************ CSV ************************
-
-// experienceRouter.get("/:userId/experiences/CSV", async (req, res, next) => {
-//   try {
-//     const user = await UsersModel.findById(req.params.userId);
-//     if (!user)
-//       return next(
-//         createError(404, `User with id ${req.params.userId} not found!`)
-//       );
-//     const expArr = user.experiences;
-//     const filename = `${(
-//       user.name
-//     ).toLowerCase()}-experiences.csv`;
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename=${filename}.csv`
-//     );
-//     const src = JSON.stringify(expArr);
-//     const transform = new Transform({
-//       fields: [ "role", "company", "description", "area"],
-//     });
-//     pipeline(src, transform, res, (error) => {
-//       if (error) console.log(error);
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// });
 
 experienceRouter.post("/:userId/experiences", async (req, res, next) => {
   try {

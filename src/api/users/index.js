@@ -106,7 +106,7 @@ usersRouter.delete("/:userId", async (req, res, next) => {
     if (numberOfDeletedRows === 1) {
       res.status(204).send();
     } else {
-      next(createError(404, `User with id ${req.params.userId} not found!`));
+      next(createHttpError(404, `User with id ${req.params.userId} not found!`));
     }
   } catch (error) {
     next(error);
@@ -115,26 +115,26 @@ usersRouter.delete("/:userId", async (req, res, next) => {
 
 // // ************************ PROFILE PICTURE ************************
 
-// usersRouter.post(
-//   "/:userId/image",
-//   cloudinaryUploader,
-//   async (req, res, next) => {
-//     try {
-//       const updatedUser = await UsersModel.findByIdAndUpdate(
-//         req.params.userId,
-//         { image: req.file.path },
-//         { new: true, runValidators: true }
-//       );
-//       if (updatedUser) {
-//         res.send(updatedUser);
-//       } else {
-//         next(createError(404, `User with id ${req.params.userId} not found!`));
-//       }
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
+usersRouter.post(
+  "/:userId/image",
+  cloudinaryUploader,
+  async (req, res, next) => {
+    try {
+      const imageToAddObject = {
+        image:req.file.path,
+      }
+      const [numberOfUpdatedRows, updatedRecords] = await UsersModel.update(imageToAddObject, { where: { userId: req.params.userId }, returning: true })
+      console.log()
+      if (numberOfUpdatedRows === 1) {
+        res.send(updatedRecords[0])
+      } else {
+        next(createHttpError(404, `User with id ${req.params.userId} not found!`));
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 // // ************************ COVER PICTURE ************************
 

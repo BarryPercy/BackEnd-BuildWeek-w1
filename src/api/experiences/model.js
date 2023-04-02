@@ -31,7 +31,7 @@ const ExperiencesModel = sequelize.define(
       allowNull: false,
     },
     image: {
-      type: DataTypes.STRING(50), 
+      type: DataTypes.STRING(250), 
       allowNull: false,
     },
     description: {

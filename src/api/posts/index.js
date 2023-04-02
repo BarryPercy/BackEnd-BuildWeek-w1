@@ -127,15 +127,15 @@ postsRouter.post(
   cloudinaryUploader,
   async (req, res, next) => {
     try {
-      const updatedPost = await PostsModel.findByIdAndUpdate(
-        req.params.postId,
-        { image: req.file.path },
-        { new: true, runValidators: true }
-      );
-      if (updatedPost) {
-        res.send(updatedPost);
+      const imageToAddObject = {
+        image:req.file.path,
+      }
+      const [numberOfUpdatedRows, updatedRecords] = await PostsModel.update(imageToAddObject, { where: { postId: req.params.postId }, returning: true })
+      console.log()
+      if (numberOfUpdatedRows === 1) {
+        res.send(updatedRecords[0])
       } else {
-        next(createError(404, `Post with id ${req.params.postId} not found!`));
+        next(createHttpError(404, `Post with id ${req.params.postId} not found!`));
       }
     } catch (error) {
       next(error);
