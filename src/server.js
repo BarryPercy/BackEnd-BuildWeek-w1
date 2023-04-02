@@ -1,44 +1,30 @@
 import Express from "express";
 import listEndpoints from "express-list-endpoints";
 import cors from "cors";
-import mongoose from "mongoose";
-import postsRouter from "./api/posts/index.js";
 import usersRouter from "./api/users/index.js";
-import commentsRouter from "./api/comments/index.js";
 import {
   badReqHandler,
   generalErrorHandler,
   notFoundHandler,
 } from "./errorHandlers.js";
-import experienceRouter from "./api/experiences/index.js";
-import createHttpError from "http-errors";
-import educationRouter from "./api/education/index.js";
+import { pgConnect } from "./db.js"
+// import experienceRouter from "./api/experiences/index.js";
+// import createHttpError from "http-errors";
+// import educationRouter from "./api/education/index.js";
+// import commentsRouter from "./api/comments/index.js";
+import postsRouter from "./api/posts/index.js";
 
 const server = Express();
 const port = process.env.PORT || 3001;
-const whiteList = [process.env.FE_DEV_URL, process.env.FE_PROD_URL];
-const corsOptions = {
-  origin: (origin, corsNext) => {
-    if (!origin || whiteList.indexOf(origin) !== -1) {
-      corsNext(null, true);
-    } else {
-      corsNext(
-        corsNext(
-          createHttpError(400, `Origin ${origin} is not in the whitelist!`)
-        )
-      );
-    }
-  },
-};
-server.use(cors(corsOptions));
+server.use(cors())
 
 server.use(Express.json());
 
 server.use("/api/users", usersRouter);
 server.use("/api/posts", postsRouter);
-server.use("/api/users", experienceRouter);
-server.use("/api/users", educationRouter);
-server.use("/api/posts", commentsRouter);
+// server.use("/api/users", experienceRouter);
+// server.use("/api/users", educationRouter);
+// server.use("/api/posts", commentsRouter);
 // server.use("/users", imageRouter);
 // server.use("/profile", CVRouter);
 // server.use("/users", CSVRouter);
@@ -49,10 +35,8 @@ server.use(badReqHandler);
 server.use(notFoundHandler);
 server.use(generalErrorHandler);
 
-mongoose.connect(process.env.MONGO_URL);
-mongoose.connection.on("connected", () => {
-  server.listen(port, () => {
-    console.table(listEndpoints(server));
-    console.log(`✅ Server is running on port ${port}`);
-  });
-});
+await pgConnect()
+server.listen(port, () => {
+  console.table(listEndpoints(server))
+  console.log(`Server is running on port ${port}`)
+})

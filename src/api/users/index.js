@@ -6,6 +6,8 @@ import UsersModel from "./model.js";
 import { v2 as cloudinary } from "cloudinary";
 import PDFDocument from "pdfkit";
 import request from "request";
+import { Op } from "sequelize"
+import PostsModel from "../posts/model.js";
 
 const usersRouter = Express.Router();
 
@@ -30,13 +32,9 @@ usersRouter.post("/", async (req, res, next) => {
       ...req.body,
       image:
         "https://as2.ftcdn.net/v2/jpg/03/31/69/91/1000_F_331699188_lRpvqxO5QRtwOM05gR50ImaaJgBx68vi.jpg",
-      experiences: [],
-      cover:
-        "https://ns.clubmed.com/dream/PRODUCT_CENTER/DESTINATIONS/SUN/Caraibes___Amerique_du_Nord/Turks___Caicos/Turkoise/61477-utr4qogyd6-swhr.jpg",
     };
-    const newUser = new UsersModel(userToAdd);
-    const { _id } = await newUser.save();
-    res.status(201).send({ _id });
+    const { userId } = await UsersModel.create(userToAdd);
+    res.status(201).send({ userId });
   } catch (error) {
     next(error);
   }
@@ -44,10 +42,20 @@ usersRouter.post("/", async (req, res, next) => {
 
 usersRouter.get("/", async (req, res, next) => {
   try {
-    const users = await UsersModel.find().populate({
-      path: "social.friends social.sent social.pending",
-      select: "name surname image",
-    });
+    const query = {}
+    const users = await UsersModel.findAndCountAll({
+      where: { ...query },
+      limit: req.query.limit,
+      offset: req.query.offset,
+      order: [
+        ["name", "ASC"],
+        ["surname", "ASC"],
+      ],
+      // attributes: ["firstName", "lastName"],
+      include:[
+        {model: PostsModel, attributes: ["text"],}
+      ]
+    })
     res.send(users);
   } catch (error) {
     next(error);
@@ -56,10 +64,7 @@ usersRouter.get("/", async (req, res, next) => {
 
 usersRouter.get("/:userId", async (req, res, next) => {
   try {
-    const user = await UsersModel.findById(req.params.userId).populate({
-      path: "social.friends social.sent social.pending",
-      select: "name surname image",
-    });
+    const user = await UsersModel.findByPk(req.params.userId, { attributes: { exclude: ["createdAt", "updatedAt"] } })
     if (user) {
       res.send(user);
     } else {
@@ -77,13 +82,9 @@ usersRouter.get("/:userId", async (req, res, next) => {
 
 usersRouter.put("/:userId", async (req, res, next) => {
   try {
-    const updatedUser = await UsersModel.findByIdAndUpdate(
-      req.params.userId,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (updatedUser) {
-      res.send(updatedUser);
+    const [numberOfUpdatedRows, updatedRecords] = await UsersModel.update(req.body, { where: { userId: req.params.userId }, returning: true })
+    if (numberOfUpdatedRows === 1) {
+      res.send(updatedRecords[0])
     } else {
       next(
         createHttpError(
@@ -99,8 +100,8 @@ usersRouter.put("/:userId", async (req, res, next) => {
 
 usersRouter.delete("/:userId", async (req, res, next) => {
   try {
-    const deletedUser = await UsersModel.findByIdAndDelete(req.params.userId);
-    if (deletedUser) {
+    const numberOfDeletedRows = await UsersModel.destroy({ where: { userId: req.params.userId } })
+    if (numberOfDeletedRows === 1) {
       res.status(204).send();
     } else {
       next(createError(404, `User with id ${req.params.userId} not found!`));
@@ -110,370 +111,370 @@ usersRouter.delete("/:userId", async (req, res, next) => {
   }
 });
 
-// ************************ PROFILE PICTURE ************************
+// // ************************ PROFILE PICTURE ************************
 
-usersRouter.post(
-  "/:userId/image",
-  cloudinaryUploader,
-  async (req, res, next) => {
-    try {
-      const updatedUser = await UsersModel.findByIdAndUpdate(
-        req.params.userId,
-        { image: req.file.path },
-        { new: true, runValidators: true }
-      );
-      if (updatedUser) {
-        res.send(updatedUser);
-      } else {
-        next(createError(404, `User with id ${req.params.userId} not found!`));
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// usersRouter.post(
+//   "/:userId/image",
+//   cloudinaryUploader,
+//   async (req, res, next) => {
+//     try {
+//       const updatedUser = await UsersModel.findByIdAndUpdate(
+//         req.params.userId,
+//         { image: req.file.path },
+//         { new: true, runValidators: true }
+//       );
+//       if (updatedUser) {
+//         res.send(updatedUser);
+//       } else {
+//         next(createError(404, `User with id ${req.params.userId} not found!`));
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
-// ************************ COVER PICTURE ************************
+// // ************************ COVER PICTURE ************************
 
-usersRouter.post(
-  "/:userId/cover",
-  cloudinaryUploader,
-  async (req, res, next) => {
-    try {
-      const updatedUser = await UsersModel.findByIdAndUpdate(
-        req.params.userId,
-        { cover: req.file.path },
-        { new: true, runValidators: true }
-      );
-      if (updatedUser) {
-        res.send(updatedUser);
-      } else {
-        next(createError(404, `User with id ${req.params.userId} not found!`));
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// usersRouter.post(
+//   "/:userId/cover",
+//   cloudinaryUploader,
+//   async (req, res, next) => {
+//     try {
+//       const updatedUser = await UsersModel.findByIdAndUpdate(
+//         req.params.userId,
+//         { cover: req.file.path },
+//         { new: true, runValidators: true }
+//       );
+//       if (updatedUser) {
+//         res.send(updatedUser);
+//       } else {
+//         next(createError(404, `User with id ${req.params.userId} not found!`));
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
-// ************************ CV PDF ************************
+// // ************************ CV PDF ************************
 
-usersRouter.get("/:userId/CV", async (req, res, next) => {
-  try {
-    const document = await UsersModel.findById(req.params.userId);
-    if (!document)
-      return next(
-        createError(404, `User with id ${req.params.userId} not found!`)
-      );
-    const doc = new PDFDocument();
+// usersRouter.get("/:userId/CV", async (req, res, next) => {
+//   try {
+//     const document = await UsersModel.findById(req.params.userId);
+//     if (!document)
+//       return next(
+//         createError(404, `User with id ${req.params.userId} not found!`)
+//       );
+//     const doc = new PDFDocument();
 
-    request(
-      { url: document.image, encoding: null },
-      function (err, response, body) {
-        if (err) {
-          console.error(err);
-          return;
-        }
+//     request(
+//       { url: document.image, encoding: null },
+//       function (err, response, body) {
+//         if (err) {
+//           console.error(err);
+//           return;
+//         }
 
-        // Create a buffer from the image data
-        const imageBuffer = Buffer.from(body);
+//         // Create a buffer from the image data
+//         const imageBuffer = Buffer.from(body);
 
-        // Create an image object from the buffer
-        const image = doc.openImage(imageBuffer);
-        doc.fontSize(20);
-        doc.text(`Curriculum Vitae`, { align: "center" });
-        doc.fontSize(13);
-        doc.moveDown();
-        doc.text(`Name: ${document.name}`);
-        doc.text(`Surname: ${document.surname}`);
-        doc.text(`Email: ${document.email}`);
-        doc.text(`Bio: ${document.bio}`);
-        doc.text(`Title: ${document.title}`);
-        doc.text(`Area: ${document.area}`);
-        doc.moveDown();
-        if (document.experiences.length > 0) {
-          doc.text(`Experiences:`);
-          document.experiences.map((e) => {
-            doc.text(`    role: ${e.role}`),
-              doc.text(`    company: ${e.company}`),
-              doc.text(`    Description: ${e.description}`);
-            doc.text(`    Area: ${e.area}`);
-            doc.text(`    Start Date: ${e.startDate}`);
-            if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
-            doc.moveDown();
-          });
-        }
-        if (document.educations.length > 0) {
-          doc.text(`Educations:`);
-          document.educations.map((e) => {
-            doc.text(`    School: ${e.school}`);
-            if (e.degree) doc.text(`    Degree: ${e.degree}`);
-            if (e.field) doc.text(`    Field: ${e.field}`);
-            if (e.grade) doc.text(`   Grade: ${e.grade}`);
-            if (e.activity) doc.text(`    Activity: ${e.activity}`);
-            if (e.startDate) doc.text(`    Start Date: ${e.startDate}`);
-            if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
-            doc.text(` `);
-          });
-        }
-        // Add the image to the PDF document
-        doc.image(image, {
-          fit: [120, 120],
-          align: "center",
-          valign: "center",
-        });
-        // Set the PDF response headers and send the PDF document to the client
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename=${document._id}.pdf`
-        );
-        doc.pipe(res);
-        doc.end();
-      }
-    );
-  } catch (error) {
-    next(error);
-  }
-});
+//         // Create an image object from the buffer
+//         const image = doc.openImage(imageBuffer);
+//         doc.fontSize(20);
+//         doc.text(`Curriculum Vitae`, { align: "center" });
+//         doc.fontSize(13);
+//         doc.moveDown();
+//         doc.text(`Name: ${document.name}`);
+//         doc.text(`Surname: ${document.surname}`);
+//         doc.text(`Email: ${document.email}`);
+//         doc.text(`Bio: ${document.bio}`);
+//         doc.text(`Title: ${document.title}`);
+//         doc.text(`Area: ${document.area}`);
+//         doc.moveDown();
+//         if (document.experiences.length > 0) {
+//           doc.text(`Experiences:`);
+//           document.experiences.map((e) => {
+//             doc.text(`    role: ${e.role}`),
+//               doc.text(`    company: ${e.company}`),
+//               doc.text(`    Description: ${e.description}`);
+//             doc.text(`    Area: ${e.area}`);
+//             doc.text(`    Start Date: ${e.startDate}`);
+//             if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
+//             doc.moveDown();
+//           });
+//         }
+//         if (document.educations.length > 0) {
+//           doc.text(`Educations:`);
+//           document.educations.map((e) => {
+//             doc.text(`    School: ${e.school}`);
+//             if (e.degree) doc.text(`    Degree: ${e.degree}`);
+//             if (e.field) doc.text(`    Field: ${e.field}`);
+//             if (e.grade) doc.text(`   Grade: ${e.grade}`);
+//             if (e.activity) doc.text(`    Activity: ${e.activity}`);
+//             if (e.startDate) doc.text(`    Start Date: ${e.startDate}`);
+//             if (e.endDate) doc.text(`    End Date: ${e.endDate}`);
+//             doc.text(` `);
+//           });
+//         }
+//         // Add the image to the PDF document
+//         doc.image(image, {
+//           fit: [120, 120],
+//           align: "center",
+//           valign: "center",
+//         });
+//         // Set the PDF response headers and send the PDF document to the client
+//         res.setHeader("Content-Type", "application/pdf");
+//         res.setHeader(
+//           "Content-Disposition",
+//           `attachment; filename=${document._id}.pdf`
+//         );
+//         doc.pipe(res);
+//         doc.end();
+//       }
+//     );
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
-// ************************ FRIENDS ************************
+// // ************************ FRIENDS ************************
 
-usersRouter.post(
-  "/:senderId/friendrequest/:reciverId",
-  async (req, res, next) => {
-    try {
-      const sender = await UsersModel.findById(req.params.senderId);
-      if (!sender)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.senderId} not found.`
-          )
-        );
-      const reciver = await UsersModel.findById(req.params.reciverId);
-      if (!reciver)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.reciverId} not found.`
-          )
-        );
+// usersRouter.post(
+//   "/:senderId/friendrequest/:reciverId",
+//   async (req, res, next) => {
+//     try {
+//       const sender = await UsersModel.findById(req.params.senderId);
+//       if (!sender)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.senderId} not found.`
+//           )
+//         );
+//       const reciver = await UsersModel.findById(req.params.reciverId);
+//       if (!reciver)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.reciverId} not found.`
+//           )
+//         );
 
-      const isSent = sender.social.sent.includes(req.params.reciverId);
-      const isFriend = sender.social.friends.includes(req.params.reciverId);
-      const isPending = sender.social.pending.includes(req.params.reciverId);
+//       const isSent = sender.social.sent.includes(req.params.reciverId);
+//       const isFriend = sender.social.friends.includes(req.params.reciverId);
+//       const isPending = sender.social.pending.includes(req.params.reciverId);
 
-      if (isSent) {
-        const letsUnSend = await UsersModel.findOneAndUpdate(
-          { _id: req.params.senderId },
-          { $pull: { "social.sent": req.params.reciverId } },
-          { new: true, runValidators: true }
-        );
-        const letsUnPending = await UsersModel.findByIdAndUpdate(
-          { _id: req.params.reciverId },
-          { $pull: { "social.pending": req.params.senderId } },
-          { new: true, runValidators: true }
-        );
-        res.send({
-          message: `Friend request cancelled to ${req.params.reciverId}`,
-        });
-      } else if (isFriend) {
-        res.send({
-          message: `Id: ${req.params.senderId} is already your friend.`,
-        });
-      } else if (isPending) {
-        res.send({
-          message: `You have a pending request from id: ${req.params.senderId}, accept it to be friends`,
-        });
-      } else {
-        const letsSend = await UsersModel.findOneAndUpdate(
-          { _id: req.params.senderId },
-          { $push: { "social.sent": req.params.reciverId } },
-          { new: true, runValidators: true }
-        );
-        const letsPending = await UsersModel.findByIdAndUpdate(
-          { _id: req.params.reciverId },
-          { $push: { "social.pending": req.params.senderId } },
-          { new: true, runValidators: true }
-        );
-        res.send({
-          message: `Friend request sended to ${req.params.reciverId}`,
-        });
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//       if (isSent) {
+//         const letsUnSend = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.senderId },
+//           { $pull: { "social.sent": req.params.reciverId } },
+//           { new: true, runValidators: true }
+//         );
+//         const letsUnPending = await UsersModel.findByIdAndUpdate(
+//           { _id: req.params.reciverId },
+//           { $pull: { "social.pending": req.params.senderId } },
+//           { new: true, runValidators: true }
+//         );
+//         res.send({
+//           message: `Friend request cancelled to ${req.params.reciverId}`,
+//         });
+//       } else if (isFriend) {
+//         res.send({
+//           message: `Id: ${req.params.senderId} is already your friend.`,
+//         });
+//       } else if (isPending) {
+//         res.send({
+//           message: `You have a pending request from id: ${req.params.senderId}, accept it to be friends`,
+//         });
+//       } else {
+//         const letsSend = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.senderId },
+//           { $push: { "social.sent": req.params.reciverId } },
+//           { new: true, runValidators: true }
+//         );
+//         const letsPending = await UsersModel.findByIdAndUpdate(
+//           { _id: req.params.reciverId },
+//           { $push: { "social.pending": req.params.senderId } },
+//           { new: true, runValidators: true }
+//         );
+//         res.send({
+//           message: `Friend request sended to ${req.params.reciverId}`,
+//         });
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
-usersRouter.post(
-  "/:accepterId/acceptfriend/:acceptedId",
-  async (req, res, next) => {
-    try {
-      const accepter = await UsersModel.findById(req.params.accepterId);
-      if (!accepter)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.accepterId} not found.`
-          )
-        );
-      const accepted = await UsersModel.findById(req.params.acceptedId);
-      if (!accepted)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.acceptedId} not found.`
-          )
-        );
+// usersRouter.post(
+//   "/:accepterId/acceptfriend/:acceptedId",
+//   async (req, res, next) => {
+//     try {
+//       const accepter = await UsersModel.findById(req.params.accepterId);
+//       if (!accepter)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.accepterId} not found.`
+//           )
+//         );
+//       const accepted = await UsersModel.findById(req.params.acceptedId);
+//       if (!accepted)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.acceptedId} not found.`
+//           )
+//         );
 
-      const isPending = accepter.social.pending.includes(req.params.acceptedId);
+//       const isPending = accepter.social.pending.includes(req.params.acceptedId);
 
-      if (isPending) {
-        const letsAcceptFriend = await UsersModel.findByIdAndUpdate(
-          { _id: req.params.accepterId },
-          {
-            $pull: { "social.pending": req.params.acceptedId },
-            $push: { "social.friends": req.params.acceptedId },
-          },
-          { new: true, runValidators: true }
-        );
-        const letsBeAccepted = await UsersModel.findOneAndUpdate(
-          { _id: req.params.acceptedId },
-          {
-            $pull: { "social.sent": req.params.accepterId },
-            $push: { "social.friends": req.params.accepterId },
-          },
-          { new: true, runValidators: true }
-        );
+//       if (isPending) {
+//         const letsAcceptFriend = await UsersModel.findByIdAndUpdate(
+//           { _id: req.params.accepterId },
+//           {
+//             $pull: { "social.pending": req.params.acceptedId },
+//             $push: { "social.friends": req.params.acceptedId },
+//           },
+//           { new: true, runValidators: true }
+//         );
+//         const letsBeAccepted = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.acceptedId },
+//           {
+//             $pull: { "social.sent": req.params.accepterId },
+//             $push: { "social.friends": req.params.accepterId },
+//           },
+//           { new: true, runValidators: true }
+//         );
 
-        res.send({
-          message: `User ${req.params.acceptedId} accepted as friend`,
-        });
-      } else {
-        return next(
-          createHttpError(
-            404,
-            `No pending request with the id: ${req.params.acceptedId}.`
-          )
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//         res.send({
+//           message: `User ${req.params.acceptedId} accepted as friend`,
+//         });
+//       } else {
+//         return next(
+//           createHttpError(
+//             404,
+//             `No pending request with the id: ${req.params.acceptedId}.`
+//           )
+//         );
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
-usersRouter.post(
-  "/:cancellerId/cancelrequest/:cancelledId",
-  async (req, res, next) => {
-    try {
-      const canceller = await UsersModel.findById(req.params.cancellerId);
-      if (!canceller)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.cancellerId} not found.`
-          )
-        );
-      const cancelled = await UsersModel.findById(req.params.cancelledId);
-      if (!cancelled)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.cancelledId} not found.`
-          )
-        );
+// usersRouter.post(
+//   "/:cancellerId/cancelrequest/:cancelledId",
+//   async (req, res, next) => {
+//     try {
+//       const canceller = await UsersModel.findById(req.params.cancellerId);
+//       if (!canceller)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.cancellerId} not found.`
+//           )
+//         );
+//       const cancelled = await UsersModel.findById(req.params.cancelledId);
+//       if (!cancelled)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.cancelledId} not found.`
+//           )
+//         );
 
-      const isPending = canceller.social.pending.includes(
-        req.params.cancelledId
-      );
+//       const isPending = canceller.social.pending.includes(
+//         req.params.cancelledId
+//       );
 
-      if (isPending) {
-        const letsCancelRequest = await UsersModel.findByIdAndUpdate(
-          { _id: req.params.cancellerId },
-          {
-            $pull: { "social.pending": req.params.cancelledId },
-          },
-          { new: true, runValidators: true }
-        );
-        const letsCancelRequest2 = await UsersModel.findOneAndUpdate(
-          { _id: req.params.cancelledId },
-          {
-            $pull: { "social.sent": req.params.cancellerId },
-          },
-          { new: true, runValidators: true }
-        );
+//       if (isPending) {
+//         const letsCancelRequest = await UsersModel.findByIdAndUpdate(
+//           { _id: req.params.cancellerId },
+//           {
+//             $pull: { "social.pending": req.params.cancelledId },
+//           },
+//           { new: true, runValidators: true }
+//         );
+//         const letsCancelRequest2 = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.cancelledId },
+//           {
+//             $pull: { "social.sent": req.params.cancellerId },
+//           },
+//           { new: true, runValidators: true }
+//         );
 
-        res.send({
-          message: `User ${req.params.cancelledId} friend request cancelled`,
-        });
-      } else {
-        return next(
-          createHttpError(
-            404,
-            `No pending request with the id: ${req.params.cancelledId}.`
-          )
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//         res.send({
+//           message: `User ${req.params.cancelledId} friend request cancelled`,
+//         });
+//       } else {
+//         return next(
+//           createHttpError(
+//             404,
+//             `No pending request with the id: ${req.params.cancelledId}.`
+//           )
+//         );
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
 
-usersRouter.post(
-  "/:unfriendlyId/unfriend/:unfriendedId",
-  async (req, res, next) => {
-    try {
-      const unFriendly = await UsersModel.findById(req.params.unfriendlyId);
-      if (!unFriendly)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.unfriendlyId} not found.`
-          )
-        );
-      const unFriended = await UsersModel.findById(req.params.unfriendedId);
-      if (!unFriended)
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.unfriendedId} not found.`
-          )
-        );
+// usersRouter.post(
+//   "/:unfriendlyId/unfriend/:unfriendedId",
+//   async (req, res, next) => {
+//     try {
+//       const unFriendly = await UsersModel.findById(req.params.unfriendlyId);
+//       if (!unFriendly)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.unfriendlyId} not found.`
+//           )
+//         );
+//       const unFriended = await UsersModel.findById(req.params.unfriendedId);
+//       if (!unFriended)
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.unfriendedId} not found.`
+//           )
+//         );
 
-      const letsCheck = unFriendly.social.friends.includes(
-        req.params.unfriendedId
-      );
+//       const letsCheck = unFriendly.social.friends.includes(
+//         req.params.unfriendedId
+//       );
 
-      if (letsCheck) {
-        const letsUnFriendFirst = await UsersModel.findOneAndUpdate(
-          { _id: req.params.unfriendlyId },
-          { $pull: { "social.friends": req.params.unfriendedId } },
-          { new: true, runValidators: true }
-        );
-        const letsUnFriendSecond = await UsersModel.findOneAndUpdate(
-          { _id: req.params.unfriendedId },
-          { $pull: { "social.friends": req.params.unfriendlyId } },
-          { new: true, runValidators: true }
-        );
-        res.send({
-          message: `You and User with the id: ${req.params.unfriendedId} are not friends any more`,
-        });
-      } else {
-        return next(
-          createHttpError(
-            404,
-            `User with the id: ${req.params.unfriendlyId} and User with the id:${req.params.unfriendedId}are not friends`
-          )
-        );
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+//       if (letsCheck) {
+//         const letsUnFriendFirst = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.unfriendlyId },
+//           { $pull: { "social.friends": req.params.unfriendedId } },
+//           { new: true, runValidators: true }
+//         );
+//         const letsUnFriendSecond = await UsersModel.findOneAndUpdate(
+//           { _id: req.params.unfriendedId },
+//           { $pull: { "social.friends": req.params.unfriendlyId } },
+//           { new: true, runValidators: true }
+//         );
+//         res.send({
+//           message: `You and User with the id: ${req.params.unfriendedId} are not friends any more`,
+//         });
+//       } else {
+//         return next(
+//           createHttpError(
+//             404,
+//             `User with the id: ${req.params.unfriendlyId} and User with the id:${req.params.unfriendedId}are not friends`
+//           )
+//         );
+//       }
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+//);
 
 export default usersRouter;
